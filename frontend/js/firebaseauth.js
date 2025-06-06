@@ -62,7 +62,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebas
     .catch((error)=>{
         const errorCode=error.code;
         if(errorCode=='auth/email-already-in-use'){
-            showMessage('Esse e-mail já existe !!!', 'signUpMessage');
+            showMessage('Esse e-mail já existe !', 'signUpMessage');
         }
         else{
             showMessage('Não foi possível criar sua conta!', 'signUpMessage');
