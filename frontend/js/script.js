@@ -205,3 +205,47 @@ async function consultarSaldo() {
     resultadoDiv.innerHTML = '<p style="color: red;">Produto não encontrado.</p>';
   }
 }
+
+async function exportarProdutos() {
+  try {
+    const res = await fetch(`${apiURL}/exportar`);
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'produtos.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (error) {
+    alert('Erro ao exportar produtos.');
+    console.error(error);
+  }
+}
+
+async function importarProdutos() {
+  const input = document.getElementById('arquivoImportacao');
+  const file = input.files[0];
+  if (!file) {
+    alert('Selecione um arquivo!');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('arquivo', file);
+
+  try {
+    const res = await fetch(`${apiURL}/importar`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await res.json();
+    alert(result.message || 'Importação realizada!');
+    carregarProdutos(); // atualiza tabela
+  } catch (error) {
+    alert('Erro ao importar produtos.');
+    console.error(error);
+  }
+}

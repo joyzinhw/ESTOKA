@@ -22,6 +22,10 @@
       <button onclick="mostrarSecao('secaoSaldo')">SALDO</button>
       <button onclick="mostrarSecao('secaoMovimento')">ENTRADA & SAÍDA</button>
       <button onclick="mostrarSecao('secaoHistorico')">HISTÓRICO</button>
+
+      <h3>DADOS</h3>
+      <button onclick="mostrarSecao('secaoImportar')">IMPORTAR</button>
+      <button onclick="mostrarSecao('secaoExportar')">EXPORTAR</button>
     </nav>
 
     <main>
@@ -72,6 +76,18 @@
   <ul id="listaHistorico"></ul>
 </section>
 
+<!-- IMPORTAR -->
+<section id="secaoImportar" class="secao-oculta">
+  <h2>Importar Produtos</h2>
+  <input type="file" id="arquivoImportacao" accept=".xlsx,.csv">
+  <button onclick="importarProdutos()">IMPORTAR</button>
+</section>
+
+<!-- EXPORTAR -->
+<section id="secaoExportar" class="secao-oculta">
+  <h2>Exportar Produtos</h2>
+  <button onclick="exportarProdutos()">BAIXAR PLANILHA</button>
+</section>
 
     </main>
   </div>

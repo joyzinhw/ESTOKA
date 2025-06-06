@@ -3,7 +3,16 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
+const multer = require('multer');
+const XLSX = require('xlsx');
+const fs = require('fs');
+const path = require('path');
+
+// Modelo do Produto (ajuste o caminho conforme sua estrutura)
 const Produto = require('./models/Produto');
+
+// Configurar multer para upload de arquivos
+const upload = multer({ dest: 'uploads/' });
 
 const app = express();
 
@@ -109,6 +118,60 @@ app.put('/produtos/:id', async (req, res) => {
   if (!produto) return res.status(404).json({ erro: 'Produto não encontrado.' });
 
   res.json(produto);
+});
+
+
+/** 📤 EXPORTAR dados como .xlsx */
+app.get('/produtos/exportar', async (req, res) => {
+  try {
+    const produtos = await Produto.find({}, { nome: 1, quantidade: 1, _id: 0 });
+
+    const dados = produtos.map(p => ({
+      Nome: p.nome,
+      Quantidade: p.quantidade
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dados);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Produtos');
+
+    const filePath = path.join(__dirname, 'produtos.xlsx');
+    XLSX.writeFile(workbook, filePath);
+
+    res.download(filePath, 'produtos.xlsx', err => {
+      if (err) console.error('Erro ao baixar o arquivo:', err);
+      fs.unlinkSync(filePath);
+    });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao exportar dados.' });
+  }
+});
+
+/** 📥 IMPORTAR dados de .xlsx ou .csv */
+app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
+  try {
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const dados = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    for (const item of dados) {
+      const nome = item.Nome || item.nome;
+      const quantidade = parseInt(item.Quantidade || item.quantidade || 0);
+
+      if (!nome) continue;
+
+      const existente = await Produto.findOne({ nome: new RegExp(`^${nome}$`, 'i') });
+      if (!existente) {
+        await Produto.create({ nome, quantidade });
+      }
+    }
+
+    fs.unlinkSync(req.file.path);
+    res.json({ message: 'Importação concluída com sucesso!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao importar dados.' });
+  }
 });
 
 // Iniciar servidor
