@@ -37,6 +37,17 @@ async function cadastrarProduto() {
   }
 
   try {
+    // Verifica se já existe um produto com o mesmo nome
+    const res = await fetch(apiURL);
+    const produtos = await res.json();
+    const nomeExiste = produtos.some(p => p.nome.toLowerCase() === nome.toLowerCase());
+
+    if (nomeExiste) {
+      alert('Já existe um produto com esse nome!');
+      return;
+    }
+
+    // Cadastrar novo produto
     await fetch(apiURL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -51,6 +62,7 @@ async function cadastrarProduto() {
     alert('Erro ao cadastrar produto.');
   }
 }
+
 
 async function deletarProduto(id) {
   const confirmar = confirm('Tem certeza que deseja deletar este produto?');

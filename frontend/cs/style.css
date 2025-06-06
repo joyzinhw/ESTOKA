@@ -13,14 +13,14 @@ header {
 }
 
 .logo {
-  width: 40px;
-  height: 40px;
+  width: 80px;
+  height: 80px;
 }
 
 .avatar {
   width: 40px;
   height: 40px;
-  background: #5f63b6;
+  background: #2596be;
   border-radius: 50%;
   color: white;
   display: flex;
@@ -28,6 +28,7 @@ header {
   justify-content: center;
 }
 
+/* Container principal */
 .container {
   display: flex;
 }
@@ -39,25 +40,37 @@ nav {
 }
 
 nav h3 {
-  color: #999;
+  color: #000000;
   font-size: 12px;
   margin-top: 20px;
 }
 
+/* Nav buttons padronizados */
 nav button {
-  display: block;
-  margin: 10px 0;
-  padding: 8px;
-  background: none;
+  height: 36px;
+  line-height: 36px;
+  padding: 0 12px;
+  font-size: 14px;
+  border-radius: 5px;
   border: none;
-  color: #777;
+  background: none;
+  color: #303030;
   cursor: pointer;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 10px 0;
 }
 
+nav button:hover {
+  background: #e5eaf2;
+}
+
+/* Botão ativo no nav */
 nav .active {
   background: #e5eaf2;
   color: #555;
-  border-radius: 4px;
+  border-radius: 5px;
 }
 
 main {
@@ -65,15 +78,54 @@ main {
   padding: 20px;
 }
 
-.form input {
-  padding: 8px;
-  margin-right: 10px;
+/* Form container com flexbox e espaçamento */
+.form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.form button {
-  padding: 8px 12px;
-  background: #e5eaf2;
+/* Inputs e botões padronizados */
+input, button {
+  height: 36px;           /* altura fixa */
+  line-height: 36px;      /* texto centralizado verticalmente */
+  padding: 0 12px;        /* espaçamento horizontal */
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  vertical-align: middle;
+  font-family: Arial, sans-serif;
+  cursor: pointer;
+}
+
+/* Inputs flexíveis para preencher o espaço */
+input[type="text"], input[type="number"] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Botões com fundo e cor */
+button {
+  background-color: #e5eaf2;
+  color: #303030;
   border: none;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #cdd6e0;
+}
+
+/* Botão delete com estilo específico */
+button.delete {
+  background: #f8d7da;
+  color: red;
+  border: none;
+  padding: 0 12px;
+  height: 36px;
+  line-height: 36px;
+  border-radius: 5px;
   cursor: pointer;
 }
 
@@ -85,21 +137,14 @@ table {
 
 th {
   text-align: left;
-  color: #999;
+  color: #303030;
+  border-radius: 5px;
 }
 
 td {
   padding: 10px 0;
 }
 
-button.delete {
-  background: #f8d7da;
-  color: red;
-  border: none;
-  padding: 5px 10px;
-  cursor: pointer;
-  border-radius: 4px;
-}
 .secao-oculta {
   display: none;
 }
@@ -107,7 +152,6 @@ button.delete {
 .secao-visivel {
   display: block;
 }
-
 
 #resultadoSaldo {
   margin-top: 10px;
@@ -117,4 +161,26 @@ button.delete {
 #listaHistorico {
   margin-top: 10px;
   padding-left: 20px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  input, button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  nav button {
+    flex: 1 1 45%;
+    height: 36px;
+    line-height: 36px;
+  }
 }

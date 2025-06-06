@@ -4,15 +4,11 @@
   <meta charset="UTF-8">
   <title>HOSPITAL</title>
   <link rel="stylesheet" href="/frontend/cs/style.css">
-  <style>
-    .secao-oculta { display: none; }
-    .secao-visivel { display: block; }
-  </style>
 </head>
 <body>
 
   <header>
-    <img src="logo.png" alt="Logo" class="logo">
+    <img src="/frontend/img/LOGO.png" alt="Logo" class="logo">
     <h1>HOSPITAL</h1>
     <div class="avatar">H</div>
   </header>
@@ -24,7 +20,7 @@
 
       <h3>ESTOQUE</h3>
       <button onclick="mostrarSecao('secaoSaldo')">SALDO</button>
-      <button onclick="mostrarSecao('secaoMovimento')">ENTRADAS/SAÍDAS</button>
+      <button onclick="mostrarSecao('secaoMovimento')">ENTRADA & SAÍDA</button>
       <button onclick="mostrarSecao('secaoHistorico')">HISTÓRICO</button>
     </nav>
 
@@ -42,7 +38,7 @@
           <thead>
             <tr>
               <th>NOME</th>
-              <th>AÇÕES</th>
+              <th>QUANTIDADE</th>
             </tr>
           </thead>
           <tbody id="produtosTable">
