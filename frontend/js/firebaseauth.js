@@ -48,7 +48,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebas
             firstName: firstName,
             lastName:lastName
         };
-        showMessage('Account Created Successfully', 'signUpMessage');
+        showMessage('Conta criada com sucesso!', 'signUpMessage');
         const docRef=doc(db, "users", user.uid);
         setDoc(docRef,userData)
         .then(()=>{
@@ -62,10 +62,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebas
     .catch((error)=>{
         const errorCode=error.code;
         if(errorCode=='auth/email-already-in-use'){
-            showMessage('Email Address Already Exists !!!', 'signUpMessage');
+            showMessage('Esse e-mail já existe !!!', 'signUpMessage');
         }
         else{
-            showMessage('unable to create User', 'signUpMessage');
+            showMessage('Não foi possível criar sua conta!', 'signUpMessage');
         }
     })
  });
@@ -79,7 +79,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebas
 
     signInWithEmailAndPassword(auth, email,password)
     .then((userCredential)=>{
-        showMessage('login is successful', 'signInMessage');
+        showMessage('Login realizado com sucesso!', 'signInMessage');
         const user=userCredential.user;
         localStorage.setItem('loggedInUserId', user.uid);
         window.location.href='index.html';
@@ -87,10 +87,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebas
     .catch((error)=>{
         const errorCode=error.code;
         if(errorCode==='auth/invalid-credential'){
-            showMessage('Incorrect Email or Password', 'signInMessage');
+            showMessage('E-mail ou senha incorretos!', 'signInMessage');
         }
         else{
-            showMessage('Account does not Exist', 'signInMessage');
+            showMessage('Conta não existe!', 'signInMessage');
         }
     })
  })
