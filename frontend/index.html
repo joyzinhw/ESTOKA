@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>HOSPITAL</title>
+  <link rel="stylesheet" href="/frontend/cs/style.css">
+  <style>
+    .secao-oculta { display: none; }
+    .secao-visivel { display: block; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="logo.png" alt="Logo" class="logo">
+    <h1>HOSPITAL</h1>
+    <div class="avatar">H</div>
+  </header>
+
+  <div class="container">
+    <nav>
+      <h3>CADASTRO</h3>
+      <button onclick="mostrarSecao('secaoCadastro')">PRODUTOS</button>
+
+      <h3>ESTOQUE</h3>
+      <button onclick="mostrarSecao('secaoSaldo')">SALDO</button>
+      <button onclick="mostrarSecao('secaoMovimento')">ENTRADAS/SAÍDAS</button>
+      <button onclick="mostrarSecao('secaoHistorico')">HISTÓRICO</button>
+    </nav>
+
+    <main>
+
+      <!-- CADASTRO DE PRODUTO -->
+      <section id="secaoCadastro" class="secao-visivel">
+        <div class="form">
+          <input type="text" id="produtoNome" placeholder="Nome do produto">
+          <input type="number" id="produtoQtd" placeholder="Quantidade inicial">
+          <button onclick="cadastrarProduto()">CADASTRAR</button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>NOME</th>
+              <th>AÇÕES</th>
+            </tr>
+          </thead>
+          <tbody id="produtosTable">
+            <!-- preenchido via JS -->
+          </tbody>
+        </table>
+      </section>
+
+      <!-- SALDO -->
+      <section id="secaoSaldo" class="secao-oculta">
+        <h2>Consultar Saldo</h2>
+        <input type="text" id="buscaNome" placeholder="Nome do produto">
+        <button onclick="consultarSaldo()">Buscar</button>
+        <div id="resultadoSaldo"></div>
+      </section>
+
+<!-- ENTRADA / SAÍDA -->
+<section id="secaoMovimento" class="secao-oculta">
+  <h2>Registrar Entrada/Saída</h2>
+  <input type="text" id="nomeProdutoMovimento" placeholder="Nome do produto"> <!-- mudou para nome -->
+  <input type="number" id="qtdMovimento" placeholder="Quantidade">
+  <button onclick="executarMovimento('entrada')">ENTRADA</button>
+  <button onclick="executarMovimento('saida')">SAÍDA</button>
+</section>
+
+<!-- HISTÓRICO -->
+<section id="secaoHistorico" class="secao-oculta">
+  <h2>Histórico de Movimentações</h2>
+  <input type="text" id="nomeProdutoHistorico" placeholder="Nome do produto"> <!-- mudou para nome -->
+  <button onclick="verHistoricoPorNome()">Ver Histórico</button>
+  <ul id="listaHistorico"></ul>
+</section>
+
+
+    </main>
+  </div>
+
+<script src="/frontend/js/script.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,120 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #fff;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid #ddd;
+  justify-content: space-between;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background: #5f63b6;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  display: flex;
+}
+
+nav {
+  width: 200px;
+  padding: 20px;
+  border-right: 1px solid #ddd;
+}
+
+nav h3 {
+  color: #999;
+  font-size: 12px;
+  margin-top: 20px;
+}
+
+nav button {
+  display: block;
+  margin: 10px 0;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: #777;
+  cursor: pointer;
+}
+
+nav .active {
+  background: #e5eaf2;
+  color: #555;
+  border-radius: 4px;
+}
+
+main {
+  flex: 1;
+  padding: 20px;
+}
+
+.form input {
+  padding: 8px;
+  margin-right: 10px;
+}
+
+.form button {
+  padding: 8px 12px;
+  background: #e5eaf2;
+  border: none;
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  color: #999;
+}
+
+td {
+  padding: 10px 0;
+}
+
+button.delete {
+  background: #f8d7da;
+  color: red;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.secao-oculta {
+  display: none;
+}
+
+.secao-visivel {
+  display: block;
+}
+
+
+#resultadoSaldo {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+#listaHistorico {
+  margin-top: 10px;
+  padding-left: 20px;
+}
