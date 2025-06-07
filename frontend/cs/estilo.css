@@ -5,14 +5,39 @@
     font-family:"poppins",sans-serif;
 }
 body{
-    background-color: #c9d6ff;
-    background:linear-gradient(to right,#e2e2e2,#c9d6ff);
+    background-color: #ffffff;
+    background: #fff;
 }
+
+header {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid #ddd;
+  justify-content: space-between;
+}
+
+.logo {
+  width: 80px;
+  height: 80px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background: #000000;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .container{
     background:#fff;
-    width:450px;
+    width:550px;
     padding:1.5rem;
-    margin:50px auto;
+    margin: 150px auto;
     border-radius:10px;
     box-shadow:0 20px 35px rgba(0,0,1,0.9);
 }
@@ -145,4 +170,13 @@ button:hover{
     opacity:0;
     animation:fadeOut 7s forwards;
 
+}
+.links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 0.8rem;
+    font-weight: bold;
 }
