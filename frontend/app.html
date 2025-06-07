@@ -8,13 +8,11 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="short icon" href="/frontend/img/LOGO.png">
-    
-    <title>Login</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/frontend/cs/estilo.css">
-    <script type="module" src="/frontend/js/firebaseauth.js"></script>
-        <script type="module" src="/frontend/js/homepage.js"></script>
+    <link rel="short icon" href="/frontend/img/LOGO.png">
+    <title>ESTOKA</title>
+    <link rel="stylesheet" href="/frontend/cs/style.css">
+    <script type="module" src="/frontend/js/homepage.js"></script>
+  
 </head>
 <body>
 
@@ -23,74 +21,92 @@
     <h1>ESTOKA</h1>
     <img src="/frontend/img/LOGO.png" alt="Logo" class="logo">
   </header>
-  
-    <div class="container" id="signup" style="display:none;">
-      <h1 class="form-title">Registrar</h1>
-      <form method="post" action="">
-        <div id="signUpMessage" class="messageDiv" style="display:none;"></div>
-        <div class="input-group">
-           <i class="fas fa-user"></i>
-           <input type="text"  id="fName" placeholder="First Name" required>
-           <label for="fname">Primeiro Nome</label>
-        </div>
-        <div class="input-group">
-            <i class="fas fa-user"></i>
-            <input type="text"  id="lName" placeholder="Last Name" required>
-            <label for="lName">Ultimo Nome</label>
-        </div>
-        <div class="input-group">
-            <i class="fas fa-envelope"></i>
-            <input type="email"  id="rEmail" placeholder="Email" required>
-            <label for="rEmail">Gmail</label>
-        </div>
-        <div class="input-group">
-            <i class="fas fa-lock"></i>
-            <input type="password" id="rPassword"  placeholder="Password" required>
-            <label for="rPassword">Senha</label>
-        </div>
-       <button class="btn" id="submitSignUp" >Entrar</button>
-      </form>
-<br>
-      <div class="icons">
-        <i class="fab fa-google"></i>
-        <i class="fab fa-facebook"></i>
-      </div>
-      <div class="links">
-        <p>Já tem uma conta?</p>
-        <button id="signInButton">Entrar</button>
-      </div>
-    </div>
 
-  <div class="container" id="signIn">
-        <h1 class="form-title">Entrar</h1>
-        <form method="post" action="">
-          <div id="signInMessage" class="messageDiv" style="display:none;"></div>
+  <div class="container">
+    <nav>
+      <h3>CADASTRO</h3>
+      <button onclick="mostrarSecao('secaoCadastro')">PRODUTOS</button>
 
-          <div class="input-group">
-              <i class="fas fa-envelope"></i>
-              <input type="email"  id="email" placeholder="Email" required>
-              <label for="email">Gmail</label>
-          </div>
-          <div class="input-group">
-              <i class="fas fa-lock"></i>
-            <input type="password" id="password"  placeholder="Password" required>
-              <label for="password">Senha</label>
-          </div>
-          <p class="recover">
-            <a href="reset-password.html">Esqueceu a senha?</a>
-          </p>
-         <button  class="btn"  id="submitSignIn">Entrar</button>
-        </form>
-<br>
-        <div class="icons">
-          <i class="fab fa-google"></i>
-          <i class="fab fa-facebook"></i>
+      <h3>ESTOQUE</h3>
+      <button onclick="mostrarSecao('secaoSaldo')">SALDO</button>
+      <button onclick="mostrarSecao('secaoMovimento')">ENTRADA & SAÍDA</button>
+      <button onclick="mostrarSecao('secaoHistorico')">HISTÓRICO</button>
+
+      <h3>DADOS</h3>
+      <button onclick="mostrarSecao('secaoImportar')">IMPORTAR</button>
+      <button onclick="mostrarSecao('secaoExportar')">EXPORTAR</button>
+      <button onclick="mostrarSecao('secaoDashboard')">DASHBOARD</button>
+
+    <h3></h3>
+<button id="logout">SAIR</button>
+
+    </nav>
+
+    <main>
+
+      <!-- CADASTRO DE PRODUTO -->
+      <section id="secaoCadastro" class="secao-visivel">
+        <div class="form">
+          <input type="text" id="produtoNome" placeholder="Nome do produto">
+          <input type="number" id="produtoQtd" placeholder="Quantidade inicial">
+          <button onclick="cadastrarProduto()">CADASTRAR</button>
         </div>
-        <div class="links">
-          <p>Não tem conta?</p>
-          <button id="signUpButton">Faça sua conta</button>
-        </div>
-      </div>
-      <script src="/frontend/js/script.js"></script>
+
+        <table>
+          <thead>
+            <tr>
+              <th>NOME</th>
+              <th>QUANTIDADE</th>
+            </tr>
+          </thead>
+          <tbody id="produtosTable">
+            <!-- preenchido via JS -->
+          </tbody>
+        </table>
+      </section>
+
+      <!-- SALDO -->
+      <section id="secaoSaldo" class="secao-oculta">
+        <h2>Consultar Saldo</h2>
+        <input type="text" id="buscaNome" placeholder="Nome do produto">
+        <button onclick="consultarSaldo()">Buscar</button>
+        <div id="resultadoSaldo"></div>
+      </section>
+
+<!-- ENTRADA / SAÍDA -->
+<section id="secaoMovimento" class="secao-oculta">
+  <h2>Registrar Entrada/Saída</h2>
+  <input type="text" id="nomeProdutoMovimento" placeholder="Nome do produto"> <!-- mudou para nome -->
+  <input type="number" id="qtdMovimento" placeholder="Quantidade">
+  <button onclick="executarMovimento('entrada')">ENTRADA</button>
+  <button onclick="executarMovimento('saida')">SAÍDA</button>
+</section>
+
+<!-- HISTÓRICO -->
+<section id="secaoHistorico" class="secao-oculta">
+  <h2>Histórico de Movimentações</h2>
+  <input type="text" id="nomeProdutoHistorico" placeholder="Nome do produto"> <!-- mudou para nome -->
+  <button onclick="verHistoricoPorNome()">Ver Histórico</button>
+  <ul id="listaHistorico"></ul>
+</section>
+
+<!-- IMPORTAR -->
+<section id="secaoImportar" class="secao-oculta">
+  <h2>Importar Produtos</h2>
+  <input type="file" id="arquivoImportacao" accept=".xlsx,.csv">
+  <button onclick="importarProdutos()">IMPORTAR</button>
+</section>
+
+<!-- EXPORTAR -->
+<section id="secaoExportar" class="secao-oculta">
+  <h2>Exportar Produtos</h2>
+  <button onclick="exportarProdutos()">BAIXAR PLANILHA</button>
+</section>
+
+    </main>
+  </div>
+
+<script src="/frontend/js/script.js"></script>
+
 </body>
 </html>

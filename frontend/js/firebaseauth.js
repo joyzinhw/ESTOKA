@@ -7,14 +7,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebas
   // https://firebase.google.com/docs/web/setup#available-libraries
 
   // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyCfCJv5CQ6Qk9wF7YWrHvQp2Yk7BVgOC-g",
-    authDomain: "login-cc86f.firebaseapp.com",
-    projectId: "login-cc86f",
-    storageBucket: "login-cc86f.firebasestorage.app",
-    messagingSenderId: "867237090778",
-    appId: "1:867237090778:web:33e70f4fd966da682c1ce3"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyCfCJv5CQ6Qk9wF7YWrHvQp2Yk7BVgOC-g",
+  authDomain: "login-cc86f.firebaseapp.com",
+  projectId: "login-cc86f",
+  storageBucket: "login-cc86f.firebasestorage.app",
+  messagingSenderId: "867237090778",
+  appId: "1:867237090778:web:33e70f4fd966da682c1ce3"
+};
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
@@ -52,7 +52,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebas
         const docRef=doc(db, "users", user.uid);
         setDoc(docRef,userData)
         .then(()=>{
-            window.location.href='app.html';
+            window.location.href='index.html';  //app
         })
         .catch((error)=>{
             console.error("error writing document", error);
@@ -82,7 +82,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebas
         showMessage('Login realizado com sucesso!', 'signInMessage');
         const user=userCredential.user;
         localStorage.setItem('loggedInUserId', user.uid);
-        window.location.href='index.html';
+        window.location.href='app.html'; //app
     })
     .catch((error)=>{
         const errorCode=error.code;
