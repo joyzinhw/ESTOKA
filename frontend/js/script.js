@@ -1,4 +1,4 @@
-const apiURL = 'http://localhost:5000/produtos';
+const apiURL = 'https://estoka.onrender.com/produtos';
 
 const signUpButton=document.getElementById('signUpButton');
 const signInButton=document.getElementById('signInButton');

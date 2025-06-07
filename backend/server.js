@@ -16,7 +16,10 @@ const upload = multer({ dest: 'uploads/' });
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://estokkaa.netlify.app'
+}));
+
 app.use(express.json());
 
 mongoose.connect(process.env.MONGODB_URI, {
