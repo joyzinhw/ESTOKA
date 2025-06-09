@@ -39,10 +39,10 @@ async function carregarProdutos() {
       tr.innerHTML = `
         <td>${prod.nome}</td>
         <td>${prod.quantidade ?? 0}</td>
-        <td>
-          <button onclick="deletarProduto('${prod._id}')">DELETAR</button>
-        </td>
+        <td>${prod.vencimento ?? 'Sem data'}</td>
+        <td><button onclick="deletarProduto('${prod._id}')">DELETAR</button></td>
       `;
+
       tabela.appendChild(tr);
     });
   } catch (error) {
@@ -54,9 +54,10 @@ async function carregarProdutos() {
 async function cadastrarProduto() {
   const nome = document.getElementById('produtoNome').value.trim();
   const quantidade = parseInt(document.getElementById('produtoQtd').value);
+  const vencimento = document.getElementById('produtoVencimento').value; // novo campo
 
-  if (!nome || isNaN(quantidade) || quantidade < 0) {
-    alert('Preencha todos os campos corretamente!');
+  if (!nome || isNaN(quantidade) || quantidade < 0 || !vencimento) {
+    alert('Preencha todos os campos corretamente! A data de vencimento é obrigatória.');
     return;
   }
 
@@ -73,17 +74,19 @@ async function cadastrarProduto() {
     await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, quantidade })
+      body: JSON.stringify({ nome, quantidade, vencimento })
     });
 
     document.getElementById('produtoNome').value = '';
     document.getElementById('produtoQtd').value = '';
+    document.getElementById('produtoVencimento').value = '';
     carregarProdutos();
   } catch (error) {
     console.error('Erro ao cadastrar produto:', error);
     alert('Erro ao cadastrar produto.');
   }
 }
+
 
 async function deletarProduto(id) {
   const confirmar = confirm('Tem certeza que deseja deletar este produto?');
@@ -289,7 +292,7 @@ function atualizarTabelaDashboard(produtos) {
   
   produtos.forEach(prod => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${prod.nome}</td><td>${prod.quantidade ?? 0}</td>`;
+    tr.innerHTML = `<td>${prod.nome}</td><td>${prod.quantidade ?? 0}</td><td>${prod.vencimento ?? 'Sem data'}</td>`;
     tbody.appendChild(tr);
   });
 }

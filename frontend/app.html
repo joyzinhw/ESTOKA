@@ -44,12 +44,12 @@
 
     <main>
 
-      <!-- CADASTRO DE PRODUTO -->
       <section id="secaoCadastro" class="secao-visivel">
         <div class="form">
-          <input type="text" id="produtoNome" placeholder="Nome do produto">
-          <input type="number" id="produtoQtd" placeholder="Quantidade inicial">
-          <button onclick="cadastrarProduto()">CADASTRAR</button>
+        <input type="text" id="produtoNome" placeholder="Nome do produto">
+        <input type="number" id="produtoQtd" placeholder="Quantidade inicial">
+        <input type="date" id="produtoVencimento" placeholder="Data de vencimento"> <!-- novo -->
+        <button onclick="cadastrarProduto()">CADASTRAR</button>
         </div>
 
         <table>
@@ -57,6 +57,7 @@
             <tr>
               <th>NOME</th>
               <th>QUANTIDADE</th>
+              <th>DATA DE VALIDADE</th>
             </tr>
           </thead>
           <tbody id="produtosTable">

@@ -36,7 +36,7 @@ app.get('/produtos', async (req, res) => {
 
 // Cadastrar produto com verificação de nome duplicado (case-insensitive)
 app.post('/produtos', async (req, res) => {
-  const { nome, quantidade } = req.body;
+  const { nome, quantidade, vencimento } = req.body;
 
   if (!nome || nome.trim() === '') {
     return res.status(400).json({ erro: 'Nome do produto é obrigatório.' });
@@ -47,10 +47,17 @@ app.post('/produtos', async (req, res) => {
     return res.status(400).json({ erro: 'Produto com esse nome já existe.' });
   }
 
-  const produto = new Produto({ nome, quantidade: quantidade || 0 });
+  let vencimentoDate = null;
+  if (vencimento) {
+    const parsed = new Date(vencimento);
+    if (!isNaN(parsed)) vencimentoDate = parsed;
+  }
+
+  const produto = new Produto({ nome, quantidade: quantidade || 0, vencimento: vencimentoDate });
   await produto.save();
   res.status(201).json(produto);
 });
+
 
 // Deletar produto
 app.delete('/produtos/:id', async (req, res) => {
