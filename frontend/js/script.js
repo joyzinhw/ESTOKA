@@ -39,7 +39,7 @@ async function carregarProdutos() {
       tr.innerHTML = `
         <td>${prod.nome}</td>
         <td>${prod.quantidade ?? 0}</td>
-        <td>${prod.vencimento ?? 'Sem data'}</td>
+        <td>${prod.vencimento ? new Date(prod.vencimento).toISOString().slice(0, 10) : 'Sem data'}</td>
         <td><button onclick="deletarProduto('${prod._id}')">DELETAR</button></td>
       `;
 
@@ -292,7 +292,9 @@ function atualizarTabelaDashboard(produtos) {
   
   produtos.forEach(prod => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${prod.nome}</td><td>${prod.quantidade ?? 0}</td><td>${prod.vencimento ?? 'Sem data'}</td>`;
+    const dataFormatada = prod.vencimento ? new Date(prod.vencimento).toISOString().slice(0, 10) : 'Sem data';
+    tr.innerHTML = `<td>${prod.nome}</td><td>${prod.quantidade ?? 0}</td><td>${dataFormatada}</td>`;
+
     tbody.appendChild(tr);
   });
 }
