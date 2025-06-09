@@ -127,11 +127,12 @@ app.put('/produtos/:id', async (req, res) => {
 /** 📤 EXPORTAR dados como .xlsx */
 app.get('/produtos/exportar', async (req, res) => {
   try {
-    const produtos = await Produto.find({}, { nome: 1, quantidade: 1, _id: 0 });
+    const produtos = await Produto.find({}, { nome: 1, quantidade: 1, vencimento: 1, _id: 0 });
 
     const dados = produtos.map(p => ({
       Nome: p.nome,
-      Quantidade: p.quantidade
+      Quantidade: p.quantidade,
+      Vencimento: p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : ''
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dados);
@@ -160,12 +161,22 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
     for (const item of dados) {
       const nome = item.Nome || item.nome;
       const quantidade = parseInt(item.Quantidade || item.quantidade || 0);
+      const vencimentoStr = item.Vencimento || item.vencimento;
 
       if (!nome) continue;
 
+      // Tenta converter a data de vencimento (se existir)
+      let vencimento = null;
+      if (vencimentoStr) {
+        const parsedDate = new Date(vencimentoStr);
+        if (!isNaN(parsedDate)) {
+          vencimento = parsedDate;
+        }
+      }
+
       const existente = await Produto.findOne({ nome: new RegExp(`^${nome}$`, 'i') });
       if (!existente) {
-        await Produto.create({ nome, quantidade });
+        await Produto.create({ nome, quantidade, vencimento });
       }
     }
 

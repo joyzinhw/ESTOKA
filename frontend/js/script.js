@@ -266,3 +266,83 @@ async function importarProdutos() {
     console.error(error);
   }
 }
+
+let produtosDashboard = [];
+let chartInstance = null;
+
+async function carregarDashboard() {
+  try {
+    const res = await fetch(apiURL);
+    produtosDashboard = await res.json();
+
+    atualizarTabelaDashboard(produtosDashboard);
+    atualizarGraficoDashboard(produtosDashboard);
+  } catch (error) {
+    console.error('Erro ao carregar dashboard:', error);
+    alert('Erro ao carregar dados do dashboard.');
+  }
+}
+
+function atualizarTabelaDashboard(produtos) {
+  const tbody = document.querySelector('#tabelaDashboard tbody');
+  tbody.innerHTML = '';
+  
+  produtos.forEach(prod => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${prod.nome}</td><td>${prod.quantidade ?? 0}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function atualizarGraficoDashboard(produtos) {
+  const ctx = document.getElementById('graficoDashboard').getContext('2d');
+  const nomes = produtos.map(p => p.nome);
+  const quantidades = produtos.map(p => p.quantidade ?? 0);
+
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: nomes,
+      datasets: [{
+        label: 'Quantidade em Estoque',
+        data: quantidades,
+        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+function filtrarDashboard() {
+  const nomeFiltro = document.getElementById('filtroNome').value.toLowerCase();
+  const qtdMin = parseInt(document.getElementById('filtroQtdMin').value) || 0;
+  const qtdMax = parseInt(document.getElementById('filtroQtdMax').value) || Infinity;
+
+  const filtrados = produtosDashboard.filter(p => 
+    p.nome.toLowerCase().includes(nomeFiltro) &&
+    p.quantidade >= qtdMin &&
+    p.quantidade <= qtdMax
+  );
+
+  atualizarTabelaDashboard(filtrados);
+  atualizarGraficoDashboard(filtrados);
+}
+
+// Ao mostrar o Dashboard, carregar os dados
+document.addEventListener('DOMContentLoaded', () => {
+  const dashboardBtn = document.querySelector('[onclick="mostrarSecao(\'secaoDashboard\')"]');
+  if (dashboardBtn) {
+    dashboardBtn.addEventListener('click', carregarDashboard);
+  }
+});
