@@ -1,34 +1,44 @@
 const apiURL = 'https://estoka.onrender.com/produtos';
 
-const signUpButton=document.getElementById('signUpButton');
-const signInButton=document.getElementById('signInButton');
-const signInForm=document.getElementById('signIn');
-const signUpForm=document.getElementById('signup');
+const signUpButton = document.getElementById('signUpButton');
+const signInButton = document.getElementById('signInButton');
+const signInForm = document.getElementById('signIn');
+const signUpForm = document.getElementById('signup');
 
-signUpButton.addEventListener('click',function(){
-    signInForm.style.display="none";
-    signUpForm.style.display="block";
-})
-signInButton.addEventListener('click', function(){
-    signInForm.style.display="block";
-    signUpForm.style.display="none";
-})
+signUpButton.addEventListener('click', function () {
+  signInForm.style.display = "none";
+  signUpForm.style.display = "block";
+});
+signInButton.addEventListener('click', function () {
+  signInForm.style.display = "block";
+  signUpForm.style.display = "none";
+});
 
-carregarProdutos();
+document.addEventListener('DOMContentLoaded', () => {
+  // Só carrega produtos se a tabela existir na página
+  if (document.getElementById('produtosTable')) {
+    carregarProdutos();
+  }
+});
 
 async function carregarProdutos() {
   try {
+    const tabela = document.getElementById('produtosTable');
+    if (!tabela) {
+      // Se não existe tabela, não tenta carregar produtos
+      return;
+    }
+
     const res = await fetch(apiURL);
     const produtos = await res.json();
 
-    const tabela = document.getElementById('produtosTable');
     tabela.innerHTML = '';
 
     produtos.forEach(prod => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${prod.nome}</td>
-        <td>${prod.quantidade ?? 0}</td>  <!-- Exibir quantidade -->
+        <td>${prod.quantidade ?? 0}</td>
         <td>
           <button onclick="deletarProduto('${prod._id}')">DELETAR</button>
         </td>
@@ -51,7 +61,6 @@ async function cadastrarProduto() {
   }
 
   try {
-    // Verifica se já existe um produto com o mesmo nome
     const res = await fetch(apiURL);
     const produtos = await res.json();
     const nomeExiste = produtos.some(p => p.nome.toLowerCase() === nome.toLowerCase());
@@ -61,10 +70,9 @@ async function cadastrarProduto() {
       return;
     }
 
-    // Cadastrar novo produto
     await fetch(apiURL, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nome, quantidade })
     });
 
@@ -76,7 +84,6 @@ async function cadastrarProduto() {
     alert('Erro ao cadastrar produto.');
   }
 }
-
 
 async function deletarProduto(id) {
   const confirmar = confirm('Tem certeza que deseja deletar este produto?');
@@ -102,7 +109,7 @@ async function movimentarProduto(id, tipo, quantidade) {
   try {
     await fetch(`${apiURL}/${id}/movimentar`, {
       method: 'PUT',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tipo, quantidade })
     });
     carregarProdutos();
@@ -113,7 +120,6 @@ async function movimentarProduto(id, tipo, quantidade) {
   }
 }
 
-// Novo: função para buscar produto pelo nome, usada nas movimentações
 async function buscarProdutoPorNome(nome) {
   try {
     const res = await fetch(apiURL);
@@ -143,7 +149,6 @@ async function executarMovimento(tipo) {
 
   movimentarProduto(produto._id, tipo, qtd);
 
-  // Limpar campos após movimentação
   document.getElementById('nomeProdutoMovimento').value = '';
   document.getElementById('qtdMovimento').value = '';
 }
@@ -156,7 +161,7 @@ async function verHistorico(id) {
     const lista = document.getElementById('listaHistorico');
     lista.innerHTML = '';
 
-    if(historico.length === 0) {
+    if (historico.length === 0) {
       lista.innerHTML = '<li>Sem movimentações para este produto.</li>';
       return;
     }
@@ -172,7 +177,6 @@ async function verHistorico(id) {
   }
 }
 
-// Nova função que busca pelo nome ao invés do id
 async function verHistoricoPorNome() {
   const nome = document.getElementById('nomeProdutoHistorico').value.trim();
   if (!nome) {
@@ -188,7 +192,6 @@ async function verHistoricoPorNome() {
 
   verHistorico(produto._id);
 
-  // limpar campo após busca
   document.getElementById('nomeProdutoHistorico').value = '';
 }
 
@@ -257,7 +260,7 @@ async function importarProdutos() {
 
     const result = await res.json();
     alert(result.message || 'Importação realizada!');
-    carregarProdutos(); // atualiza tabela
+    carregarProdutos();
   } catch (error) {
     alert('Erro ao importar produtos.');
     console.error(error);

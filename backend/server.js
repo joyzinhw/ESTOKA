@@ -1,268 +1,181 @@
-const apiURL = 'https://estoka.onrender.com/produtos';
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
 
-const signUpButton = document.getElementById('signUpButton');
-const signInButton = document.getElementById('signInButton');
-const signInForm = document.getElementById('signIn');
-const signUpForm = document.getElementById('signup');
+const multer = require('multer');
+const XLSX = require('xlsx');
+const fs = require('fs');
+const path = require('path');
 
-signUpButton.addEventListener('click', function () {
-  signInForm.style.display = "none";
-  signUpForm.style.display = "block";
+// Modelo do Produto (ajuste o caminho conforme sua estrutura)
+const Produto = require('./models/Produto');
+
+// Configurar multer para upload de arquivos
+const upload = multer({ dest: 'uploads/' });
+
+const app = express();
+
+app.use(cors({
+  origin: 'https://estokkaa.netlify.app'
+}));
+
+app.use(express.json());
+
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => console.log('MongoDB conectado!'))
+  .catch(err => console.error('Erro na conexão com MongoDB:', err));
+
+// Listar todos os produtos
+app.get('/produtos', async (req, res) => {
+  const produtos = await Produto.find();
+  res.json(produtos);
 });
-signInButton.addEventListener('click', function () {
-  signInForm.style.display = "block";
-  signUpForm.style.display = "none";
+
+// Cadastrar produto com verificação de nome duplicado (case-insensitive)
+app.post('/produtos', async (req, res) => {
+  const { nome, quantidade } = req.body;
+
+  if (!nome || nome.trim() === '') {
+    return res.status(400).json({ erro: 'Nome do produto é obrigatório.' });
+  }
+
+  const produtoExiste = await Produto.findOne({ nome: new RegExp(`^${nome}$`, 'i') });
+  if (produtoExiste) {
+    return res.status(400).json({ erro: 'Produto com esse nome já existe.' });
+  }
+
+  const produto = new Produto({ nome, quantidade: quantidade || 0 });
+  await produto.save();
+  res.status(201).json(produto);
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Só carrega produtos se a tabela existir na página
-  if (document.getElementById('produtosTable')) {
-    carregarProdutos();
+// Deletar produto
+app.delete('/produtos/:id', async (req, res) => {
+  await Produto.findByIdAndDelete(req.params.id);
+  res.json({ message: 'Produto deletado com sucesso!' });
+});
+
+// Movimentar produto (entrada ou saída de estoque)
+app.put('/produtos/:id/movimentar', async (req, res) => {
+  const { tipo, quantidade } = req.body;
+  const produto = await Produto.findById(req.params.id);
+
+  if (!produto) return res.status(404).json({ message: 'Produto não encontrado.' });
+
+  if (!['entrada', 'saida'].includes(tipo)) {
+    return res.status(400).json({ message: 'Tipo deve ser "entrada" ou "saida".' });
+  }
+
+  if (quantidade <= 0) {
+    return res.status(400).json({ message: 'Quantidade deve ser maior que zero.' });
+  }
+
+  if (tipo === 'entrada') {
+    produto.quantidade += quantidade;
+  } else if (tipo === 'saida') {
+    produto.quantidade -= quantidade;
+    if (produto.quantidade < 0) produto.quantidade = 0;
+  }
+
+  produto.historico.push({ tipo, quantidade });
+  await produto.save();
+
+  res.json(produto);
+});
+
+// Ver histórico de movimentações (ordenado do mais recente para o mais antigo)
+app.get('/produtos/:id/historico', async (req, res) => {
+  const produto = await Produto.findById(req.params.id);
+  if (!produto) return res.status(404).json({ message: 'Produto não encontrado.' });
+
+  const historicoOrdenado = [...produto.historico].sort((a, b) => b.data - a.data);
+  res.json(historicoOrdenado);
+});
+
+// Editar nome do produto
+app.put('/produtos/:id', async (req, res) => {
+  const { nome } = req.body;
+
+  if (!nome || nome.trim() === '') {
+    return res.status(400).json({ erro: 'Nome do produto é obrigatório.' });
+  }
+
+  const produtoExiste = await Produto.findOne({ 
+    _id: { $ne: req.params.id }, 
+    nome: new RegExp(`^${nome}$`, 'i') 
+  });
+
+  if (produtoExiste) {
+    return res.status(400).json({ erro: 'Já existe outro produto com esse nome.' });
+  }
+
+  const produto = await Produto.findByIdAndUpdate(
+    req.params.id,
+    { nome },
+    { new: true }
+  );
+
+  if (!produto) return res.status(404).json({ erro: 'Produto não encontrado.' });
+
+  res.json(produto);
+});
+
+
+/** 📤 EXPORTAR dados como .xlsx */
+app.get('/produtos/exportar', async (req, res) => {
+  try {
+    const produtos = await Produto.find({}, { nome: 1, quantidade: 1, _id: 0 });
+
+    const dados = produtos.map(p => ({
+      Nome: p.nome,
+      Quantidade: p.quantidade
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dados);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Produtos');
+
+    const filePath = path.join(__dirname, 'produtos.xlsx');
+    XLSX.writeFile(workbook, filePath);
+
+    res.download(filePath, 'produtos.xlsx', err => {
+      if (err) console.error('Erro ao baixar o arquivo:', err);
+      fs.unlinkSync(filePath);
+    });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao exportar dados.' });
   }
 });
 
-async function carregarProdutos() {
+/** 📥 IMPORTAR dados de .xlsx ou .csv */
+app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
   try {
-    const tabela = document.getElementById('produtosTable');
-    if (!tabela) {
-      // Se não existe tabela, não tenta carregar produtos
-      return;
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const dados = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    for (const item of dados) {
+      const nome = item.Nome || item.nome;
+      const quantidade = parseInt(item.Quantidade || item.quantidade || 0);
+
+      if (!nome) continue;
+
+      const existente = await Produto.findOne({ nome: new RegExp(`^${nome}$`, 'i') });
+      if (!existente) {
+        await Produto.create({ nome, quantidade });
+      }
     }
 
-    const res = await fetch(apiURL);
-    const produtos = await res.json();
-
-    tabela.innerHTML = '';
-
-    produtos.forEach(prod => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${prod.nome}</td>
-        <td>${prod.quantidade ?? 0}</td>
-        <td>
-          <button onclick="deletarProduto('${prod._id}')">DELETAR</button>
-        </td>
-      `;
-      tabela.appendChild(tr);
-    });
-  } catch (error) {
-    console.error('Erro ao carregar produtos:', error);
-    alert('Erro ao carregar produtos.');
+    fs.unlinkSync(req.file.path);
+    res.json({ message: 'Importação concluída com sucesso!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao importar dados.' });
   }
-}
+});
 
-async function cadastrarProduto() {
-  const nome = document.getElementById('produtoNome').value.trim();
-  const quantidade = parseInt(document.getElementById('produtoQtd').value);
-
-  if (!nome || isNaN(quantidade) || quantidade < 0) {
-    alert('Preencha todos os campos corretamente!');
-    return;
-  }
-
-  try {
-    const res = await fetch(apiURL);
-    const produtos = await res.json();
-    const nomeExiste = produtos.some(p => p.nome.toLowerCase() === nome.toLowerCase());
-
-    if (nomeExiste) {
-      alert('Já existe um produto com esse nome!');
-      return;
-    }
-
-    await fetch(apiURL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, quantidade })
-    });
-
-    document.getElementById('produtoNome').value = '';
-    document.getElementById('produtoQtd').value = '';
-    carregarProdutos();
-  } catch (error) {
-    console.error('Erro ao cadastrar produto:', error);
-    alert('Erro ao cadastrar produto.');
-  }
-}
-
-async function deletarProduto(id) {
-  const confirmar = confirm('Tem certeza que deseja deletar este produto?');
-  if (!confirmar) return;
-
-  try {
-    await fetch(`${apiURL}/${id}`, {
-      method: 'DELETE'
-    });
-    carregarProdutos();
-  } catch (error) {
-    console.error('Erro ao deletar produto:', error);
-    alert('Erro ao deletar produto.');
-  }
-}
-
-async function movimentarProduto(id, tipo, quantidade) {
-  if (!['entrada', 'saida'].includes(tipo) || isNaN(quantidade) || quantidade <= 0) {
-    alert('Tipo ou quantidade inválida para movimentação!');
-    return;
-  }
-
-  try {
-    await fetch(`${apiURL}/${id}/movimentar`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipo, quantidade })
-    });
-    carregarProdutos();
-    alert('Movimentação realizada com sucesso!');
-  } catch (error) {
-    console.error('Erro ao movimentar produto:', error);
-    alert('Erro ao movimentar produto.');
-  }
-}
-
-async function buscarProdutoPorNome(nome) {
-  try {
-    const res = await fetch(apiURL);
-    const produtos = await res.json();
-    return produtos.find(p => p.nome.toLowerCase() === nome.toLowerCase());
-  } catch (error) {
-    console.error('Erro ao buscar produto:', error);
-    alert('Erro ao buscar produto.');
-    return null;
-  }
-}
-
-async function executarMovimento(tipo) {
-  const nome = document.getElementById('nomeProdutoMovimento').value.trim();
-  const qtd = parseInt(document.getElementById('qtdMovimento').value);
-
-  if (!nome || isNaN(qtd) || qtd <= 0) {
-    alert('Informe o nome do produto e uma quantidade válida.');
-    return;
-  }
-
-  const produto = await buscarProdutoPorNome(nome);
-  if (!produto) {
-    alert('Produto não encontrado.');
-    return;
-  }
-
-  movimentarProduto(produto._id, tipo, qtd);
-
-  document.getElementById('nomeProdutoMovimento').value = '';
-  document.getElementById('qtdMovimento').value = '';
-}
-
-async function verHistorico(id) {
-  try {
-    const res = await fetch(`${apiURL}/${id}/historico`);
-    const historico = await res.json();
-
-    const lista = document.getElementById('listaHistorico');
-    lista.innerHTML = '';
-
-    if (historico.length === 0) {
-      lista.innerHTML = '<li>Sem movimentações para este produto.</li>';
-      return;
-    }
-
-    historico.forEach(item => {
-      const li = document.createElement('li');
-      li.textContent = `Tipo: ${item.tipo}, Quantidade: ${item.quantidade}, Data: ${new Date(item.data).toLocaleString()}`;
-      lista.appendChild(li);
-    });
-  } catch (error) {
-    console.error('Erro ao buscar histórico:', error);
-    alert('Erro ao buscar histórico.');
-  }
-}
-
-async function verHistoricoPorNome() {
-  const nome = document.getElementById('nomeProdutoHistorico').value.trim();
-  if (!nome) {
-    alert('Informe o nome do produto.');
-    return;
-  }
-
-  const produto = await buscarProdutoPorNome(nome);
-  if (!produto) {
-    alert('Produto não encontrado.');
-    return;
-  }
-
-  verHistorico(produto._id);
-
-  document.getElementById('nomeProdutoHistorico').value = '';
-}
-
-function mostrarSecao(idSecao) {
-  const secoes = document.querySelectorAll('main > section');
-  secoes.forEach(sec => sec.className = 'secao-oculta');
-  const secaoAtiva = document.getElementById(idSecao);
-  if (secaoAtiva) secaoAtiva.className = 'secao-visivel';
-}
-
-async function consultarSaldo() {
-  const nomeBusca = document.getElementById('buscaNome').value.trim();
-  const resultadoDiv = document.getElementById('resultadoSaldo');
-
-  if (!nomeBusca) {
-    resultadoDiv.innerHTML = '<p style="color: red;">Por favor, digite o nome do produto.</p>';
-    return;
-  }
-
-  const produto = await buscarProdutoPorNome(nomeBusca);
-
-  if (produto) {
-    resultadoDiv.innerHTML = `
-      <p>Produto: <strong>${produto.nome}</strong></p>
-      <p>Quantidade em estoque: <strong>${produto.quantidade ?? 0}</strong></p>
-    `;
-  } else {
-    resultadoDiv.innerHTML = '<p style="color: red;">Produto não encontrado.</p>';
-  }
-}
-
-async function exportarProdutos() {
-  try {
-    const res = await fetch(`${apiURL}/exportar`);
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'produtos.xlsx';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } catch (error) {
-    alert('Erro ao exportar produtos.');
-    console.error(error);
-  }
-}
-
-async function importarProdutos() {
-  const input = document.getElementById('arquivoImportacao');
-  const file = input.files[0];
-  if (!file) {
-    alert('Selecione um arquivo!');
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('arquivo', file);
-
-  try {
-    const res = await fetch(`${apiURL}/importar`, {
-      method: 'POST',
-      body: formData
-    });
-
-    const result = await res.json();
-    alert(result.message || 'Importação realizada!');
-    carregarProdutos();
-  } catch (error) {
-    alert('Erro ao importar produtos.');
-    console.error(error);
-  }
-}
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
