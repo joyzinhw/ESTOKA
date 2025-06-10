@@ -35,7 +35,8 @@
       <h3>DADOS</h3>
       <button onclick="mostrarSecao('secaoImportar')">IMPORTAR</button>
       <button onclick="mostrarSecao('secaoExportar')">EXPORTAR</button>
-      <button onclick="mostrarSecao('secaoDashboard')">DASHBOARD</button>
+
+      
 
     <h3></h3>
 <button id="logout">SAIR</button>
@@ -48,7 +49,7 @@
         <div class="form">
         <input type="text" id="produtoNome" placeholder="Nome do produto">
         <input type="number" id="produtoQtd" placeholder="Quantidade inicial">
-        <input type="date" id="produtoVencimento" placeholder="Data de vencimento"> <!-- novo -->
+        <input type="date" id="produtoVencimento" placeholder="Data de vencimento">
         <button onclick="cadastrarProduto()">CADASTRAR</button>
         </div>
 
@@ -57,7 +58,8 @@
             <tr>
               <th>NOME</th>
               <th>QUANTIDADE</th>
-             <th>DATA DE VALIDADE</th>
+              <th>DATA DE VALIDADE</th>
+              <th>AÇÕES</th>
             </tr>
           </thead>
           <tbody id="produtosTable">
@@ -74,64 +76,35 @@
         <div id="resultadoSaldo"></div>
       </section>
 
-<!-- ENTRADA / SAÍDA -->
-<section id="secaoMovimento" class="secao-oculta">
-  <h2>Registrar Entrada/Saída</h2>
-  <input type="text" id="nomeProdutoMovimento" placeholder="Nome do produto"> <!-- mudou para nome -->
-  <input type="number" id="qtdMovimento" placeholder="Quantidade">
-  <button onclick="executarMovimento('entrada')">ENTRADA</button>
-  <button onclick="executarMovimento('saida')">SAÍDA</button>
-</section>
+      <!-- ENTRADA / SAÍDA -->
+      <section id="secaoMovimento" class="secao-oculta">
+        <h2>Registrar Entrada/Saída</h2>
+        <input type="text" id="nomeProdutoMovimento" placeholder="Nome do produto">
+        <input type="number" id="qtdMovimento" placeholder="Quantidade">
+        <button onclick="executarMovimento('entrada')">ENTRADA</button>
+        <button onclick="executarMovimento('saida')">SAÍDA</button>
+      </section>
 
-<!-- HISTÓRICO -->
-<section id="secaoHistorico" class="secao-oculta">
-  <h2>Histórico de Movimentações</h2>
-  <input type="text" id="nomeProdutoHistorico" placeholder="Nome do produto"> <!-- mudou para nome -->
-  <button onclick="verHistoricoPorNome()">Ver Histórico</button>
-  <ul id="listaHistorico"></ul>
-</section>
+      <!-- HISTÓRICO -->
+      <section id="secaoHistorico" class="secao-oculta">
+        <h2>Histórico de Movimentações</h2>
+        <input type="text" id="nomeProdutoHistorico" placeholder="Nome do produto">
+        <button onclick="verHistoricoPorNome()">Ver Histórico</button>
+        <ul id="listaHistorico"></ul>
+      </section>
 
-<!-- IMPORTAR -->
-<section id="secaoImportar" class="secao-oculta">
-  <h2>Importar Produtos</h2>
-  <input type="file" id="arquivoImportacao" accept=".xlsx,.csv">
-  <button onclick="importarProdutos()">IMPORTAR</button>
-</section>
+      <!-- IMPORTAR -->
+      <section id="secaoImportar" class="secao-oculta">
+        <h2>Importar Produtos</h2>
+        <input type="file" id="arquivoImportacao" accept=".xlsx,.csv">
+        <button onclick="importarProdutos()">IMPORTAR</button>
+      </section>
 
-<!-- EXPORTAR -->
-<section id="secaoExportar" class="secao-oculta">
-  <h2>Exportar Produtos</h2>
-  <button onclick="exportarProdutos()">BAIXAR PLANILHA</button>
-</section>
-
-
-<section id="secaoDashboard" class="secao-oculta">
-  <h2>Dashboard de Produtos</h2>
-
-  <div>
-    <label for="filtroNome">Nome:</label>
-    <input type="text" id="filtroNome" oninput="filtrarDashboard()" placeholder="Digite o nome do produto">
-    
-    <label for="filtroQtdMin">Qtd. Mínima:</label>
-    <input type="number" id="filtroQtdMin" oninput="filtrarDashboard()" placeholder="0">
-
-    <label for="filtroQtdMax">Qtd. Máxima:</label>
-    <input type="number" id="filtroQtdMax" oninput="filtrarDashboard()" placeholder="100">
-  </div>
-
-  <table border="1" id="tabelaDashboard">
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Quantidade</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <canvas id="graficoDashboard" style="max-width: 600px; margin-top: 30px;"></canvas>
-</section>
-
+      <!-- EXPORTAR -->
+      <section id="secaoExportar" class="secao-oculta">
+        <h2>Exportar Produtos</h2>
+        <button onclick="exportarProdutos()">BAIXAR PLANILHA</button>
+      </section>
     </main>
   </div>
   

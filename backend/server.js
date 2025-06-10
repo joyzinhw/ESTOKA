@@ -139,7 +139,7 @@ app.get('/produtos/exportar', async (req, res) => {
     const dados = produtos.map(p => ({
       Nome: p.nome,
       Quantidade: p.quantidade,
-      Vencimento: p.vencimento ? new Date(p.vencimento).toLocaleDateString('pt-BR') : ''
+      Vencimento: p.vencimento ? formatarDataParaExcel(p.vencimento) : ''
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dados);
@@ -158,6 +158,15 @@ app.get('/produtos/exportar', async (req, res) => {
   }
 });
 
+// Função auxiliar para formatar data no formato dd/mm/yyyy
+function formatarDataParaExcel(date) {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 /** 📥 IMPORTAR dados de .xlsx ou .csv */
 app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
   try {
@@ -175,9 +184,23 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
       // Tenta converter a data de vencimento (se existir)
       let vencimento = null;
       if (vencimentoStr) {
-        const parsedDate = new Date(vencimentoStr);
-        if (!isNaN(parsedDate)) {
-          vencimento = parsedDate;
+        // Se for string no formato dd/mm/yyyy
+        if (typeof vencimentoStr === 'string' && vencimentoStr.includes('/')) {
+          const [day, month, year] = vencimentoStr.split('/');
+          vencimento = new Date(`${month}/${day}/${year}`);
+        } 
+        // Se for número (valor serial do Excel)
+        else if (typeof vencimentoStr === 'number') {
+          vencimento = XLSX.SSF.parse_date_code(vencimentoStr);
+        }
+        // Se já for objeto Date
+        else if (vencimentoStr instanceof Date) {
+          vencimento = vencimentoStr;
+        }
+        
+        // Se a data for inválida, define como null
+        if (isNaN(vencimento?.getTime())) {
+          vencimento = null;
         }
       }
 
