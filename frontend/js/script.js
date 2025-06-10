@@ -49,7 +49,10 @@ function atualizarTabela(produtos) {
     if (prod.vencimento) {
       const date = new Date(prod.vencimento);
       if (!isNaN(date.getTime())) {
-        dataFormatada = date.toLocaleDateString('pt-BR');
+        // Ajusta para o timezone local antes de formatar
+        const offset = date.getTimezoneOffset() * 60000; // offset em milissegundos
+        const localDate = new Date(date.getTime() - offset);
+        dataFormatada = localDate.toISOString().split('T')[0].split('-').reverse().join('/');
       }
     }
     
@@ -65,8 +68,6 @@ function atualizarTabela(produtos) {
     tabela.appendChild(tr);
   });
 }
-
-
 
 async function carregarProdutos() {
   try {
@@ -162,19 +163,44 @@ async function editarProdutoPrompt(id) {
     return;
   }
 
-  const novoNome = prompt('Editar nome do produto:', produto.nome);
-  if (!novoNome) return;
+  // Formata a data atual para exibição no prompt (DD/MM/AAAA)
+  const dataAtual = produto.vencimento ? 
+    new Date(produto.vencimento).toLocaleDateString('pt-BR') : '';
 
-  const novaQtd = parseInt(prompt('Editar quantidade:', produto.quantidade));
-  if (isNaN(novaQtd) || novaQtd < 0) {
-    alert('Quantidade inválida.');
+  const novoNome = prompt('Editar nome do produto:', produto.nome);
+  if (novoNome === null) return;
+
+  const novaQtdStr = prompt('Editar quantidade:', produto.quantidade);
+  if (novaQtdStr === null) return;
+  
+  const novaQtd = parseInt(novaQtdStr);
+  if (isNaN(novaQtd)) {
+    alert('Quantidade deve ser um número válido.');
     return;
   }
 
-  const novoVenc = prompt('Editar data de validade (AAAA-MM-DD):', produto.vencimento?.substring(0, 10));
-  if (!novoVenc) return;
+  const novoVenc = prompt('Editar data de validade (DD/MM/AAAA):', dataAtual);
+  if (novoVenc === null) return;
 
-  await atualizarProduto(id, { nome: novoNome, quantidade: novaQtd, vencimento: novoVenc });
+  // Converte a data de DD/MM/AAAA para AAAA-MM-DD (formato ISO)
+  let vencimentoISO = null;
+  if (novoVenc) {
+    const [day, month, year] = novoVenc.split('/');
+    vencimentoISO = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    
+    // Valida a data
+    const dateObj = new Date(vencimentoISO);
+    if (isNaN(dateObj.getTime())) {
+      alert('Data inválida! Use o formato DD/MM/AAAA.');
+      return;
+    }
+  }
+
+  await atualizarProduto(id, { 
+    nome: novoNome, 
+    quantidade: novaQtd, 
+    vencimento: vencimentoISO 
+  });
 }
 
 async function atualizarProduto(id, dadosAtualizados) {
@@ -184,6 +210,10 @@ async function atualizarProduto(id, dadosAtualizados) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dadosAtualizados)
     });
+
+    if (!response.ok) {
+      throw new Error('Erro ao atualizar produto');
+    }
 
     const produtoAtualizado = await response.json();
 
@@ -199,7 +229,7 @@ async function atualizarProduto(id, dadosAtualizados) {
     alert('Produto atualizado com sucesso!');
   } catch (error) {
     console.error('Erro ao atualizar produto:', error);
-    alert('Erro ao atualizar produto.');
+    alert('Erro ao atualizar produto: ' + error.message);
   }
 }
 
@@ -208,7 +238,7 @@ async function movimentarProduto(id, tipo, quantidade) {
   if (!['entrada', 'saida'].includes(tipo) || isNaN(quantidade) || quantidade <= 0) {
     alert('Tipo ou quantidade inválida para movimentação!');
     return;
-  }
+  }     console.error('Erro ao atualizar produto:', error);
 
   try {
     const response = await fetch(`${apiURL}/${id}/movimentar`, {

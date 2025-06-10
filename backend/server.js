@@ -103,8 +103,9 @@ app.get('/produtos/:id/historico', async (req, res) => {
 });
 
 // Editar nome do produto
+// Rota corrigida no backend (server.js)
 app.put('/produtos/:id', async (req, res) => {
-  const { nome } = req.body;
+  const { nome, quantidade, vencimento } = req.body;
 
   if (!nome || nome.trim() === '') {
     return res.status(400).json({ erro: 'Nome do produto é obrigatório.' });
@@ -119,9 +120,17 @@ app.put('/produtos/:id', async (req, res) => {
     return res.status(400).json({ erro: 'Já existe outro produto com esse nome.' });
   }
 
+  let vencimentoDate = null;
+  if (vencimento) {
+    vencimentoDate = new Date(vencimento);
+    if (isNaN(vencimentoDate.getTime())) {
+      return res.status(400).json({ erro: 'Data de vencimento inválida.' });
+    }
+  }
+
   const produto = await Produto.findByIdAndUpdate(
     req.params.id,
-    { nome },
+    { nome, quantidade, vencimento: vencimentoDate },
     { new: true }
   );
 
