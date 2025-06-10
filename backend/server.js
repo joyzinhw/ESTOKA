@@ -191,7 +191,9 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
         } 
         // Se for número (valor serial do Excel)
         else if (typeof vencimentoStr === 'number') {
-          vencimento = XLSX.SSF.parse_date_code(vencimentoStr);
+          const excelDate = XLSX.SSF.parse_date_code(vencimentoStr);
+          vencimento = new Date(excelDate.y, excelDate.m - 1, excelDate.d);
+
         }
         // Se já for objeto Date
         else if (vencimentoStr instanceof Date) {
@@ -213,8 +215,9 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
     fs.unlinkSync(req.file.path);
     res.json({ message: 'Importação concluída com sucesso!' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: 'Erro ao importar dados.' });
+    console.error('Erro ao importar produtos:', err.message, err.stack);
+res.status(500).json({ erro: err.message });
+
   }
 });
 
