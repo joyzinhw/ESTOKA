@@ -11,10 +11,9 @@ const path = require('path');
 // Modelo do Produto (ajuste o caminho conforme sua estrutura)
 const Produto = require('./models/Produto');
 
-// // Configurar multer para upload de arquivos
-// const upload = multer({ dest: 'uploads/' });
-// Adicione no início do arquivo (após os requires)
-const uploadDir = 'uploads';
+// Configurar multer para upload de arquivos
+const upload = multer({ dest: 'uploads/' });
+
 const app = express();
 
 app.use(cors({
@@ -168,105 +167,54 @@ function formatarDataParaExcel(date) {
   return `${day}/${month}/${year}`;
 }
 
-
-// Certifique-se que o diretório de uploads existe
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Modifique a configuração do multer
-const upload = multer({ 
-  dest: uploadDir,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-        file.mimetype === 'text/csv') {
-      cb(null, true);
-    } else {
-      cb(new Error('Tipo de arquivo não suportado'), false);
-    }
-  }
-});
-
-// Atualize a rota de importação para melhor tratamento de erros
+/** 📥 IMPORTAR dados de .xlsx ou .csv */
 app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ erro: 'Nenhum arquivo enviado.' });
-    }
-
     const workbook = XLSX.readFile(req.file.path);
     const sheetName = workbook.SheetNames[0];
     const dados = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    if (!dados || dados.length === 0) {
-      fs.unlinkSync(req.file.path);
-      return res.status(400).json({ erro: 'O arquivo está vazio ou não contém dados válidos.' });
-    }
+    for (const item of dados) {
+      const nome = item.Nome || item.nome;
+      const quantidade = parseInt(item.Quantidade || item.quantidade || 0);
+      const vencimentoStr = item.Vencimento || item.vencimento;
 
-    const produtosImportados = [];
-    const produtosComErro = [];
+      if (!nome) continue;
 
-    for (const [index, item] of dados.entries()) {
-      try {
-        const nome = item.Nome || item.nome;
-        const quantidade = parseInt(item.Quantidade || item.quantidade || 0);
-        const vencimentoStr = item.Vencimento || item.vencimento;
-
-        if (!nome || nome.trim() === '') {
-          throw new Error(`Linha ${index + 2}: Nome do produto é obrigatório`);
+      // Tenta converter a data de vencimento (se existir)
+      let vencimento = null;
+      if (vencimentoStr) {
+        // Se for string no formato dd/mm/yyyy
+        if (typeof vencimentoStr === 'string' && vencimentoStr.includes('/')) {
+          const [day, month, year] = vencimentoStr.split('/');
+          vencimento = new Date(`${month}/${day}/${year}`);
+        } 
+        // Se for número (valor serial do Excel)
+        else if (typeof vencimentoStr === 'number') {
+          vencimento = XLSX.SSF.parse_date_code(vencimentoStr);
         }
-
-        let vencimento = null;
-        if (vencimentoStr) {
-          // Se for string no formato dd/mm/yyyy
-          if (typeof vencimentoStr === 'string' && vencimentoStr.includes('/')) {
-            const [day, month, year] = vencimentoStr.split('/');
-            vencimento = new Date(`${year}-${month}-${day}`);
-          } 
-          // Se for número (valor serial do Excel)
-          else if (typeof vencimentoStr === 'number') {
-            vencimento = XLSX.SSF.parse_date_code(vencimentoStr);
-          }
-          // Se já for objeto Date
-          else if (vencimentoStr instanceof Date) {
-            vencimento = vencimentoStr;
-          }
-          
-          if (isNaN(vencimento?.getTime())) {
-            vencimento = null;
-          }
+        // Se já for objeto Date
+        else if (vencimentoStr instanceof Date) {
+          vencimento = vencimentoStr;
         }
-
-        const existente = await Produto.findOne({ nome: new RegExp(`^${nome}$`, 'i') });
-        if (!existente) {
-          const novoProduto = await Produto.create({ nome, quantidade, vencimento });
-          produtosImportados.push(novoProduto.nome);
-        } else {
-          produtosComErro.push(`Produto "${nome}" já existe e não foi importado`);
+        
+        // Se a data for inválida, define como null
+        if (isNaN(vencimento?.getTime())) {
+          vencimento = null;
         }
-      } catch (err) {
-        produtosComErro.push(err.message);
+      }
+
+      const existente = await Produto.findOne({ nome: new RegExp(`^${nome}$`, 'i') });
+      if (!existente) {
+        await Produto.create({ nome, quantidade, vencimento });
       }
     }
 
     fs.unlinkSync(req.file.path);
-    
-    res.json({ 
-      success: true,
-      message: 'Importação concluída',
-      importados: produtosImportados.length,
-      erros: produtosComErro.length,
-      detalhesErros: produtosComErro
-    });
+    res.json({ message: 'Importação concluída com sucesso!' });
   } catch (err) {
-    console.error('Erro na importação:', err);
-    if (req.file) {
-      fs.unlinkSync(req.file.path).catch(e => console.error('Erro ao deletar arquivo:', e));
-    }
-    res.status(500).json({ 
-      erro: 'Erro ao importar dados',
-      detalhes: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao importar dados.' });
   }
 });
 
