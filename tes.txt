@@ -32,17 +32,13 @@ app.get('/produtos', async (req, res) => {
   res.json(produtos);
 });
 
-// Cadastrar produto com verificação de nome duplicado
+// Cadastrar produto com verificação de nome duplicado (case-insensitive)
 app.post('/produtos', async (req, res) => {
-  const { nome, quantidade, vencimento, tipo } = req.body;
+  const { nome, quantidade, vencimento, tipo } = req.body; // 👈 Incluído tipo
 
   if (!nome || nome.trim() === '') {
     return res.status(400).json({ erro: 'Nome do produto é obrigatório.' });
   }
-
-  // Validação do tipo
-  const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G'];
-  const tipoFinal = tiposValidos.includes(tipo) ? tipo : 'UN';
 
   const produtoExiste = await Produto.findOne({ nome: new RegExp(`^${nome}$`, 'i') });
   if (produtoExiste) {
@@ -59,12 +55,14 @@ app.post('/produtos', async (req, res) => {
     nome,
     quantidade: quantidade || 0,
     vencimento: vencimentoDate,
-    tipo: tipoFinal
+    tipo: tipo || 'outros' // 👈 Defina valor padrão caso não venha no body
   });
 
   await produto.save();
   res.status(201).json(produto);
 });
+
+
 
 // Deletar produto
 app.delete('/produtos/:id', async (req, res) => {
@@ -100,7 +98,7 @@ app.put('/produtos/:id/movimentar', async (req, res) => {
   res.json(produto);
 });
 
-// Ver histórico de movimentações
+// Ver histórico de movimentações (ordenado do mais recente para o mais antigo)
 app.get('/produtos/:id/historico', async (req, res) => {
   const produto = await Produto.findById(req.params.id);
   if (!produto) return res.status(404).json({ message: 'Produto não encontrado.' });
@@ -109,17 +107,13 @@ app.get('/produtos/:id/historico', async (req, res) => {
   res.json(historicoOrdenado);
 });
 
-// Editar produto
+// Editar nome, quantidade, vencimento e tipo do produto
 app.put('/produtos/:id', async (req, res) => {
   const { nome, quantidade, vencimento, tipo } = req.body;
 
   if (!nome || nome.trim() === '') {
     return res.status(400).json({ erro: 'Nome do produto é obrigatório.' });
   }
-
-  // Validação do tipo
-  const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G'];
-  const tipoFinal = tiposValidos.includes(tipo) ? tipo : 'UN';
 
   const produtoExiste = await Produto.findOne({ 
     _id: { $ne: req.params.id }, 
@@ -140,7 +134,7 @@ app.put('/produtos/:id', async (req, res) => {
 
   const produto = await Produto.findByIdAndUpdate(
     req.params.id,
-    { nome, quantidade, vencimento: vencimentoDate, tipo: tipoFinal },
+    { nome, quantidade, vencimento: vencimentoDate, tipo }, // 👈 tipo adicionado aqui
     { new: true }
   );
 
@@ -149,17 +143,20 @@ app.put('/produtos/:id', async (req, res) => {
   res.json(produto);
 });
 
-// Exportar dados como .xlsx
+
+
+/** 📤 EXPORTAR dados como .xlsx */
 app.get('/produtos/exportar', async (req, res) => {
   try {
-    const produtos = await Produto.find({}, { nome: 1, quantidade: 1, vencimento: 1, tipo: 1, _id: 0 });
+    const produtos = await Produto.find({}, { nome: 1, quantidade: 1, vencimento: 1, _id: 0 });
 
-    const dados = produtos.map(p => ({
-      Nome: p.nome,
-      Quantidade: p.quantidade,
-      Tipo: p.tipo,
-      Vencimento: p.vencimento ? formatarDataParaExcel(p.vencimento) : ''
-    }));
+const dados = produtos.map(p => ({
+  Nome: p.nome,
+  Quantidade: p.quantidade,
+  Vencimento: p.vencimento ? formatarDataParaExcel(p.vencimento) : '',
+  Tipo: p.tipo || ''
+}));
+
 
     const worksheet = XLSX.utils.json_to_sheet(dados);
     const workbook = XLSX.utils.book_new();
@@ -186,37 +183,43 @@ function formatarDataParaExcel(date) {
   return `${day}/${month}/${year}`;
 }
 
-// Importar dados de .xlsx ou .csv
+/** 📥 IMPORTAR dados de .xlsx ou .csv */
 app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
   try {
     const workbook = XLSX.readFile(req.file.path);
     const sheetName = workbook.SheetNames[0];
     const dados = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G'];
-    
     for (const item of dados) {
       const nome = item.Nome || item.nome;
       const quantidade = parseInt(item.Quantidade || item.quantidade || 0);
       const vencimentoStr = item.Vencimento || item.vencimento;
-      const tipo = tiposValidos.includes(item.Tipo || item.tipo) ? (item.Tipo || item.tipo) : 'UN';
+      const tipo = item.Tipo || item.tipo || 'outros';
+    
+
 
       if (!nome) continue;
 
+      // Tenta converter a data de vencimento (se existir)
       let vencimento = null;
       if (vencimentoStr) {
+        // Se for string no formato dd/mm/yyyy
         if (typeof vencimentoStr === 'string' && vencimentoStr.includes('/')) {
           const [day, month, year] = vencimentoStr.split('/');
           vencimento = new Date(`${month}/${day}/${year}`);
         } 
+        // Se for número (valor serial do Excel)
         else if (typeof vencimentoStr === 'number') {
           const excelDate = XLSX.SSF.parse_date_code(vencimentoStr);
           vencimento = new Date(excelDate.y, excelDate.m - 1, excelDate.d);
+
         }
+        // Se já for objeto Date
         else if (vencimentoStr instanceof Date) {
           vencimento = vencimentoStr;
         }
         
+        // Se a data for inválida, define como null
         if (isNaN(vencimento?.getTime())) {
           vencimento = null;
         }
@@ -232,7 +235,8 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
     res.json({ message: 'Importação concluída com sucesso!' });
   } catch (err) {
     console.error('Erro ao importar produtos:', err.message, err.stack);
-    res.status(500).json({ erro: err.message });
+res.status(500).json({ erro: err.message });
+
   }
 });
 

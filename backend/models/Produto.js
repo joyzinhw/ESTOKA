@@ -1,17 +1,20 @@
 const mongoose = require('mongoose');
 
 const historicoSchema = new mongoose.Schema({
-  tipo: { type: String, enum: ['entrada', 'saida'], required: true },
-  quantidade: { type: Number, required: true },
-  data: { type: Date, default: Date.now }
+ tipo: { type: String, enum: ['entrada', 'saida'] },
+    quantidade: Number,
+    data: { type: Date, default: Date.now }
 });
 
 const produtoSchema = new mongoose.Schema({
-  nome: { type: String, required: true, unique: true },
+  nome: { type: String, required: true },
   quantidade: { type: Number, default: 0 },
-  vencimento: { type: Date, default: null },
-  tipo: { type: String, default: 'outros' },
-  historico: [historicoSchema]
+  vencimento: { type: Date },
+  tipo: { 
+    type: String, 
+    enum: ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G'],
+    default: 'UN'
+  },
 });
 
 module.exports = mongoose.model('Produto', produtoSchema);
