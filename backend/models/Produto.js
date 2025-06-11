@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const historicoSchema = new mongoose.Schema({
- tipo: { type: String, enum: ['entrada', 'saida'] },
-    quantidade: Number,
-    data: { type: Date, default: Date.now }
+ tipo: { type: String, enum: ['entrada', 'saida'], required: true },
+  quantidade: { type: Number, required: true, min: 0 },
+  data: { type: Date, default: Date.now }
 });
 
 const produtoSchema = new mongoose.Schema({
