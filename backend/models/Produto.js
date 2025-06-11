@@ -18,3 +18,4 @@ const produtoSchema = new mongoose.Schema({
   historico: [historicoSchema] 
 });
 
+module.exports = mongoose.model('Produto', produtoSchema);
