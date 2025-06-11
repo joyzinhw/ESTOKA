@@ -34,7 +34,7 @@ app.get('/produtos', async (req, res) => {
 
 // Cadastrar produto com verificação de nome duplicado (case-insensitive)
 app.post('/produtos', async (req, res) => {
-  const { nome, quantidade, vencimento } = req.body;
+  const { nome, quantidade, vencimento, tipo } = req.body; // 👈 Incluído tipo
 
   if (!nome || nome.trim() === '') {
     return res.status(400).json({ erro: 'Nome do produto é obrigatório.' });
@@ -51,10 +51,17 @@ app.post('/produtos', async (req, res) => {
     if (!isNaN(parsed)) vencimentoDate = parsed;
   }
 
-  const produto = new Produto({ nome, quantidade: quantidade || 0, vencimento: vencimentoDate });
+  const produto = new Produto({
+    nome,
+    quantidade: quantidade || 0,
+    vencimento: vencimentoDate,
+    tipo: tipo || 'outros' // 👈 Defina valor padrão caso não venha no body
+  });
+
   await produto.save();
   res.status(201).json(produto);
 });
+
 
 
 // Deletar produto
@@ -100,10 +107,9 @@ app.get('/produtos/:id/historico', async (req, res) => {
   res.json(historicoOrdenado);
 });
 
-// Editar nome do produto
-// Rota corrigida no backend (server.js)
+// Editar nome, quantidade, vencimento e tipo do produto
 app.put('/produtos/:id', async (req, res) => {
-  const { nome, quantidade, vencimento } = req.body;
+  const { nome, quantidade, vencimento, tipo } = req.body;
 
   if (!nome || nome.trim() === '') {
     return res.status(400).json({ erro: 'Nome do produto é obrigatório.' });
@@ -128,7 +134,7 @@ app.put('/produtos/:id', async (req, res) => {
 
   const produto = await Produto.findByIdAndUpdate(
     req.params.id,
-    { nome, quantidade, vencimento: vencimentoDate },
+    { nome, quantidade, vencimento: vencimentoDate, tipo }, // 👈 tipo adicionado aqui
     { new: true }
   );
 
@@ -138,16 +144,19 @@ app.put('/produtos/:id', async (req, res) => {
 });
 
 
+
 /** 📤 EXPORTAR dados como .xlsx */
 app.get('/produtos/exportar', async (req, res) => {
   try {
     const produtos = await Produto.find({}, { nome: 1, quantidade: 1, vencimento: 1, _id: 0 });
 
-    const dados = produtos.map(p => ({
-      Nome: p.nome,
-      Quantidade: p.quantidade,
-      Vencimento: p.vencimento ? formatarDataParaExcel(p.vencimento) : ''
-    }));
+const dados = produtos.map(p => ({
+  Nome: p.nome,
+  Quantidade: p.quantidade,
+  Vencimento: p.vencimento ? formatarDataParaExcel(p.vencimento) : '',
+  Tipo: p.tipo || ''
+}));
+
 
     const worksheet = XLSX.utils.json_to_sheet(dados);
     const workbook = XLSX.utils.book_new();
@@ -185,6 +194,9 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
       const nome = item.Nome || item.nome;
       const quantidade = parseInt(item.Quantidade || item.quantidade || 0);
       const vencimentoStr = item.Vencimento || item.vencimento;
+      const tipo = item.Tipo || item.tipo || 'outros';
+    
+
 
       if (!nome) continue;
 
@@ -215,7 +227,7 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res) => {
 
       const existente = await Produto.findOne({ nome: new RegExp(`^${nome}$`, 'i') });
       if (!existente) {
-        await Produto.create({ nome, quantidade, vencimento });
+        await Produto.create({ nome, quantidade, vencimento, tipo });
       }
     }
 

@@ -68,13 +68,14 @@ function atualizarTabela(produtos) {
     }
     
     tr.innerHTML = `
-      <td>${prod.nome}</td>
-      <td>${prod.quantidade ?? 0}</td>
-      <td>${formatarDataExibicao(prod.vencimento)}</td>
-      <td>
-        <button onclick="deletarProduto('${prod._id}')">DELETAR</button>
-        <button onclick="editarProdutoPrompt('${prod._id}')">EDITAR</button>
-      </td>
+    <td>${prod.nome}</td>
+    <td>${prod.quantidade ?? 0}</td>
+    <td>${prod.tipo || '—'}</td>
+    <td>${formatarDataExibicao(prod.vencimento)}</td>
+    <td>
+      <button onclick="deletarProduto('${prod._id}')">DELETAR</button>
+      <button onclick="editarProdutoPrompt('${prod._id}')">EDITAR</button>
+    </td>
     `;
     tabela.appendChild(tr);
   });
@@ -106,9 +107,10 @@ async function carregarProdutos() {
 async function cadastrarProduto() {
   const nome = document.getElementById('produtoNome').value.trim();
   const quantidade = parseInt(document.getElementById('produtoQtd').value);
+  const tipo = document.getElementById('produtoTipo').value;
   const vencimentoInput = document.getElementById('produtoVencimento').value;
 
-  if (!nome || isNaN(quantidade) ){
+  if (!nome || isNaN(quantidade) || !tipo) {
     alert('Preencha todos os campos corretamente!');
     return;
   }
@@ -120,6 +122,7 @@ async function cadastrarProduto() {
       body: JSON.stringify({ 
         nome, 
         quantidade, 
+        tipo,
         vencimento: vencimentoInput || null 
       })
     });
@@ -131,16 +134,16 @@ async function cadastrarProduto() {
 
     const novoProduto = await response.json();
     
-    // Atualiza o cache e a tabela
     const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos') || '[]');
     cachedProdutos.push(novoProduto);
     localStorage.setItem('cachedProdutos', JSON.stringify(cachedProdutos));
-    
-    // Limpa os campos
+
+    // Limpar campos após cadastro
     document.getElementById('produtoNome').value = '';
     document.getElementById('produtoQtd').value = '';
+    document.getElementById('produtoTipo').value = '';
     document.getElementById('produtoVencimento').value = '';
-    
+
     atualizarTabela(cachedProdutos);
   } catch (error) {
     console.error('Erro ao cadastrar produto:', error);
@@ -150,7 +153,7 @@ async function cadastrarProduto() {
 
 
 async function editarProdutoPrompt(id) {
-  const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos')) || '[]';
+  const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos')) || [];
   const produto = cachedProdutos.find(p => p._id === id);
   
   if (!produto) {
@@ -158,7 +161,6 @@ async function editarProdutoPrompt(id) {
     return;
   }
 
-  // Converter a data para o formato do input type="date" (AAAA-MM-DD)
   let dataAtual = '';
   if (produto.vencimento) {
     const date = new Date(produto.vencimento);
@@ -179,10 +181,12 @@ async function editarProdutoPrompt(id) {
     return;
   }
 
+  const novoTipo = prompt('Editar tipo do produto:', produto.tipo || '');
+  if (novoTipo === null) return;
+
   const novoVenc = prompt('Editar data de validade (AAAA-MM-DD):', dataAtual);
   if (novoVenc === null) return;
 
-  // Validar a data se foi informada
   if (novoVenc) {
     const date = new Date(novoVenc);
     if (isNaN(date.getTime())) {
@@ -194,9 +198,11 @@ async function editarProdutoPrompt(id) {
   await atualizarProduto(id, {
     nome: novoNome,
     quantidade: novaQtd,
+    tipo: novoTipo,
     vencimento: novoVenc || null
   });
 }
+
 
 async function deletarProduto(id) {
   const confirmar = confirm('Tem certeza que deseja deletar este produto?');

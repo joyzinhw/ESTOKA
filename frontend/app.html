@@ -36,7 +36,9 @@
       <button onclick="mostrarSecao('secaoImportar')">IMPORTAR</button>
       <button onclick="mostrarSecao('secaoExportar')">EXPORTAR</button>
 
-      
+      <h3>ZONA CRITICA</h3>
+      <button onclick="mostrarSecao('secaoVencendo')">VENCENDO</button>
+      <button onclick="mostrarSecao('secaoAcabando')">ACABANDO</button>
 
     <h3></h3>
 <button id="logout">SAIR</button>
@@ -49,6 +51,17 @@
         <div class="form">
         <input type="text" id="produtoNome" placeholder="Nome do produto">
         <input type="number" id="produtoQtd" placeholder="Quantidade inicial">
+        <select id="produtoTipo">
+        <option value="">Selecione o tipo</option>
+        <option value="UN">Unidade</option>
+        <option value="CX">Caixa</option>
+        <option value="FR">Frasco</option>
+        <option value="BL">Blister</option>
+        <option value="TB">Tubo</option>
+        <option value="MG">Miligrama</option>
+        <option value="ML">Mililitro</option>
+        <option value="G">Grama</option>
+      </select>
         <input type="date" id="produtoVencimento" placeholder="Data de vencimento">
         <button onclick="cadastrarProduto()">CADASTRAR</button>
         </div>
@@ -58,6 +71,7 @@
             <tr>
               <th>NOME</th>
               <th>QUANTIDADE</th>
+              <th>TIPO</th>
               <th>DATA DE VALIDADE</th>
               <th>AÇÕES</th>
             </tr>
@@ -105,11 +119,39 @@
         <h2>Exportar Produtos</h2>
         <button onclick="exportarProdutos()">BAIXAR PLANILHA</button>
       </section>
+
+      <!-- Seções da Zona Crítica -->
+<section id="secaoVencendo" class="secao-oculta">
+  <h2>Produtos próximos do vencimento (menos de 10 dias)</h2>
+  <table id="tabelaVencendo">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Quantidade</th>
+        <th>Vencimento</th>
+        <th>Dias Restantes</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<section id="secaoAcabando" class="secao-oculta">
+  <h2>Produtos com estoque baixo (menos de 10 unidades)</h2>
+  <table id="tabelaAcabando">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Quantidade</th>
+        <th>Vencimento</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
     </main>
   </div>
-  
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="/frontend/js/script.js"></script>
-
 </body>
 </html>
