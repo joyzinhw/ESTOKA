@@ -1,6 +1,6 @@
 const apiURL = 'https://estoka.onrender.com/produtos';
 
-// Elementos do formulário de login/signup
+// Elementos do formulário
 const signUpButton = document.getElementById('signUpButton');
 const signInButton = document.getElementById('signInButton');
 const signInForm = document.getElementById('signIn');
@@ -18,21 +18,30 @@ if (signUpButton && signInButton) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Carrega produtos do cache local enquanto busca do servidor
   if (document.getElementById('produtosTable')) {
     carregarProdutosDoCache();
     carregarProdutos();
   }
 });
 
-// Carrega produtos do localStorage enquanto espera resposta do servidor
 function carregarProdutosDoCache() {
   const cachedProdutos = localStorage.getItem('cachedProdutos');
   if (cachedProdutos) {
-    const produtos = JSON.parse(cachedProdutos);
-    atualizarTabela(produtos);
+    try {
+      const produtos = JSON.parse(cachedProdutos);
+      if (Array.isArray(produtos)) {
+        atualizarTabela(produtos);
+      } else {
+        console.warn('cachedProdutos não é um array:', produtos);
+        localStorage.removeItem('cachedProdutos'); // remove dados inválidos
+      }
+    } catch (e) {
+      console.error('Erro ao fazer parse do cache:', e);
+      localStorage.removeItem('cachedProdutos'); // também remove caso o JSON esteja corrompido
+    }
   }
 }
+
 
 function formatarDataExibicao(dataString) {
   if (!dataString) return 'Sem data';
@@ -40,8 +49,6 @@ function formatarDataExibicao(dataString) {
   try {
     const date = new Date(dataString);
     if (isNaN(date.getTime())) return 'Data inválida';
-    
-    // Formata para DD/MM/AAAA
     return date.toLocaleDateString('pt-BR');
   } catch (error) {
     console.error('Erro ao formatar data:', error);
@@ -55,11 +62,23 @@ function atualizarTabela(produtos) {
 
   tabela.innerHTML = '';
 
+  // Mapear códigos de tipo para nomes amigáveis
+  const tipos = {
+    'UN': 'Unidade',
+    'CX': 'Caixa',
+    'FR': 'Frasco',
+    'BL': 'Blister',
+    'TB': 'Tubo',
+    'MG': 'Miligrama',
+    'ML': 'Mililitro',
+    'G': 'Grama'
+  };
+
   produtos.forEach(prod => {
     const tr = document.createElement('tr');
-    
-    // Adiciona classes de alerta se necessário
     const diasRestantes = calcularDiasRestantes(prod.vencimento);
+    const tipoExibicao = tipos[prod.tipo] || prod.tipo || '—';
+    
     if (diasRestantes >= 0 && diasRestantes < 10) {
       tr.classList.add('alerta-vencimento');
     }
@@ -68,22 +87,20 @@ function atualizarTabela(produtos) {
     }
     
     tr.innerHTML = `
-    <td>${prod.nome}</td>
-    <td>${prod.quantidade ?? 0}</td>
-    <td>${prod.tipo || '—'}</td>
-    <td>${formatarDataExibicao(prod.vencimento)}</td>
-    <td>
-      <button onclick="deletarProduto('${prod._id}')">DELETAR</button>
-      <button onclick="editarProdutoPrompt('${prod._id}')">EDITAR</button>
-    </td>
+      <td>${prod.nome}</td>
+      <td>${prod.quantidade ?? 0}</td>
+      <td>${tipoExibicao}</td>
+      <td>${formatarDataExibicao(prod.vencimento)}</td>
+      <td>
+        <button onclick="deletarProduto('${prod._id}')">DELETAR</button>
+        <button onclick="editarProdutoPrompt('${prod._id}')">EDITAR</button>
+      </td>
     `;
     tabela.appendChild(tr);
   });
   
-  // Atualizar a zona crítica sempre que a tabela principal for atualizada
   atualizarZonaCritica(produtos);
 }
-
 
 async function carregarProdutos() {
   try {
@@ -93,14 +110,10 @@ async function carregarProdutos() {
     const res = await fetch(apiURL);
     const produtos = await res.json();
 
-    // Atualiza o cache local
     localStorage.setItem('cachedProdutos', JSON.stringify(produtos));
-    
-    // Atualiza a tabela
     atualizarTabela(produtos);
   } catch (error) {
     console.error('Erro ao carregar produtos:', error);
-    // Se falhar, mantém os dados do cache
   }
 }
 
@@ -138,10 +151,9 @@ async function cadastrarProduto() {
     cachedProdutos.push(novoProduto);
     localStorage.setItem('cachedProdutos', JSON.stringify(cachedProdutos));
 
-    // Limpar campos após cadastro
     document.getElementById('produtoNome').value = '';
     document.getElementById('produtoQtd').value = '';
-    document.getElementById('produtoTipo').value = '';
+    document.getElementById('produtoTipo').value = 'UN';
     document.getElementById('produtoVencimento').value = '';
 
     atualizarTabela(cachedProdutos);
@@ -150,7 +162,6 @@ async function cadastrarProduto() {
     alert(error.message);
   }
 }
-
 
 async function editarProdutoPrompt(id) {
   const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos')) || [];
@@ -181,7 +192,7 @@ async function editarProdutoPrompt(id) {
     return;
   }
 
-  const novoTipo = prompt('Editar tipo do produto:', produto.tipo || '');
+  const novoTipo = prompt('Editar tipo do produto (UN, CX, FR, BL, TB, MG, ML, G):', produto.tipo || 'UN');
   if (novoTipo === null) return;
 
   const novoVenc = prompt('Editar data de validade (AAAA-MM-DD):', dataAtual);
@@ -203,7 +214,6 @@ async function editarProdutoPrompt(id) {
   });
 }
 
-
 async function deletarProduto(id) {
   const confirmar = confirm('Tem certeza que deseja deletar este produto?');
   if (!confirmar) return;
@@ -213,12 +223,10 @@ async function deletarProduto(id) {
       method: 'DELETE'
     });
     
-    // Atualiza o cache local removendo o produto
     const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos') || []);
     const novosProdutos = cachedProdutos.filter(p => p._id !== id);
     localStorage.setItem('cachedProdutos', JSON.stringify(novosProdutos));
     
-    // Atualiza a tabela
     atualizarTabela(novosProdutos);
   } catch (error) {
     console.error('Erro ao deletar produto:', error);
@@ -240,7 +248,6 @@ async function atualizarProduto(id, dadosAtualizados) {
 
     const produtoAtualizado = await response.json();
 
-    // Atualiza o cache local
     let cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos') || '[]');
     const index = cachedProdutos.findIndex(p => p._id === id);
     if (index !== -1) {
@@ -255,7 +262,6 @@ async function atualizarProduto(id, dadosAtualizados) {
     alert('Erro ao atualizar produto: ' + error.message);
   }
 }
-
 
 async function movimentarProduto(id, tipo, quantidade) {
   if (!['entrada', 'saida'].includes(tipo) || isNaN(quantidade) || quantidade <= 0) {
@@ -295,7 +301,6 @@ async function movimentarProduto(id, tipo, quantidade) {
   }
 }
 
-// Restante das funções permanece igual...
 async function buscarProdutoPorNome(nome) {
   try {
     const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos') || []);
@@ -322,11 +327,9 @@ async function executarMovimento(tipo) {
   }
 
   try {
-    // Busca o produto no cache local primeiro
     const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos') || '[]');
     let produto = cachedProdutos.find(p => p.nome.toLowerCase() === nome.toLowerCase());
 
-    // Se não encontrou no cache, busca no servidor
     if (!produto) {
       const response = await fetch(`${apiURL}/buscar?nome=${encodeURIComponent(nome)}`);
       if (response.ok) {
@@ -336,11 +339,9 @@ async function executarMovimento(tipo) {
       }
     }
 
-    // Executa a movimentação
     const sucesso = await movimentarProduto(produto._id, tipo, qtd);
     
     if (sucesso) {
-      // Limpa os campos após sucesso
       document.getElementById('nomeProdutoMovimento').value = '';
       document.getElementById('qtdMovimento').value = '';
     }
@@ -388,7 +389,6 @@ async function verHistoricoPorNome() {
   }
 
   verHistorico(produto._id);
-
   document.getElementById('nomeProdutoHistorico').value = '';
 }
 
@@ -414,6 +414,7 @@ async function consultarSaldo() {
     resultadoDiv.innerHTML = `
       <p>Produto: <strong>${produto.nome}</strong></p>
       <p>Quantidade em estoque: <strong>${produto.quantidade ?? 0}</strong></p>
+      <p>Tipo: <strong>${produto.tipo || 'Não especificado'}</strong></p>
     `;
   } else {
     resultadoDiv.innerHTML = '<p style="color: red;">Produto não encontrado.</p>';
@@ -458,7 +459,6 @@ async function importarProdutos() {
     const result = await res.json();
     alert(result.message || 'Importação realizada!');
     
-    // Atualiza os produtos após importação
     carregarProdutos();
   } catch (error) {
     alert('Erro ao importar produtos.');
@@ -466,9 +466,8 @@ async function importarProdutos() {
   }
 }
 
-// Função para calcular dias restantes até o vencimento
 function calcularDiasRestantes(dataVencimento) {
-  if (!dataVencimento) return Infinity; // Retorna infinito se não houver data
+  if (!dataVencimento) return Infinity;
   
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -482,23 +481,19 @@ function calcularDiasRestantes(dataVencimento) {
   return diffDays;
 }
 
-// Função para atualizar a zona crítica
 function atualizarZonaCritica(produtos) {
   const hoje = new Date();
   
-  // Filtrar produtos que estão próximos do vencimento (menos de 10 dias)
   const produtosVencendo = produtos.filter(produto => {
     if (!produto.vencimento) return false;
     const diasRestantes = calcularDiasRestantes(produto.vencimento);
     return diasRestantes >= 0 && diasRestantes < 10;
   });
   
-  // Filtrar produtos com estoque baixo (menos de 10 unidades)
   const produtosAcabando = produtos.filter(produto => {
     return produto.quantidade < 10 && produto.quantidade > 0;
   });
   
-  // Atualizar a tabela de produtos vencendo
   const tabelaVencendo = document.getElementById('tabelaVencendo').getElementsByTagName('tbody')[0];
   tabelaVencendo.innerHTML = '';
   
@@ -506,7 +501,6 @@ function atualizarZonaCritica(produtos) {
     const diasRestantes = calcularDiasRestantes(produto.vencimento);
     const tr = document.createElement('tr');
     
-    // Adiciona classe de alerta se faltar menos de 3 dias
     if (diasRestantes < 3) {
       tr.classList.add('alerta-urgente');
     } else if (diasRestantes < 7) {
@@ -522,25 +516,35 @@ function atualizarZonaCritica(produtos) {
     tabelaVencendo.appendChild(tr);
   });
   
-  // Atualizar a tabela de produtos acabando
-  const tabelaAcabando = document.getElementById('tabelaAcabando').getElementsByTagName('tbody')[0];
-  tabelaAcabando.innerHTML = '';
-  
-  produtosAcabando.forEach(produto => {
-    const tr = document.createElement('tr');
-    
-    // Adiciona classe de alerta se tiver menos de 3 unidades
-    if (produto.quantidade < 3) {
-      tr.classList.add('alerta-urgente');
-    } else if (produto.quantidade < 5) {
-      tr.classList.add('alerta-proximo');
-    }
-    
-    tr.innerHTML = `
-      <td>${produto.nome}</td>
-      <td>${produto.quantidade}</td>
-      <td>${formatarDataExibicao(produto.vencimento)}</td>
-    `;
-    tabelaAcabando.appendChild(tr);
+  const tabela = document.getElementById('tabelaAcabando').querySelector('tbody');
+  if (!tabela) return;
+
+  tabela.innerHTML = '';
+
+  const limitesCriticos = {
+    'UN': 10,
+    'CX': 5,
+    'FR': 10,
+    'TB': 5,
+    'BL': 5
+    // Você pode incluir mais se quiser
+  };
+
+  const produtosCriticos = produtos.filter(prod => {
+    const limite = limitesCriticos[prod.tipo] ?? 0;
+    return prod.quantidade <= limite;
   });
+
+  produtosCriticos.forEach(prod => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${prod.nome}</td>
+      <td>${prod.quantidade}</td>
+      <td>${formatarDataExibicao(prod.vencimento)}</td>
+    `;
+    tabela.appendChild(tr);
+  });
+
+  const secao = document.getElementById('secaoAcabando');
+  secao.classList.toggle('secao-oculta', produtosCriticos.length === 0);
 }
