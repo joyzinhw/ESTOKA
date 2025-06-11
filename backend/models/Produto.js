@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const historicoSchema = new mongoose.Schema({
   tipo: { type: String, enum: ['entrada', 'saida'], required: true },
   quantidade: { type: Number, required: true, min: 0 },
@@ -15,3 +17,4 @@ const produtoSchema = new mongoose.Schema({
   },
   historico: [historicoSchema] 
 });
+
