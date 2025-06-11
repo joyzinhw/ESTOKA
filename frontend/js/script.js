@@ -34,7 +34,21 @@ function carregarProdutosDoCache() {
   }
 }
 
-// Função para atualizar a tabela com os produtos
+function formatarDataExibicao(dataString) {
+  if (!dataString) return 'Sem data';
+  
+  try {
+    const date = new Date(dataString);
+    if (isNaN(date.getTime())) return 'Data inválida';
+    
+    // Formata para DD/MM/AAAA
+    return date.toLocaleDateString('pt-BR');
+  } catch (error) {
+    console.error('Erro ao formatar data:', error);
+    return 'Data inválida';
+  }
+}
+
 function atualizarTabela(produtos) {
   const tabela = document.getElementById('produtosTable');
   if (!tabela) return;
@@ -44,27 +58,31 @@ function atualizarTabela(produtos) {
   produtos.forEach(prod => {
     const tr = document.createElement('tr');
     
-    // Formata a data para exibição
-    let dataFormatada = 'Sem data';
-    if (prod.vencimento) {
-      const date = new Date(prod.vencimento);
-      if (!isNaN(date.getTime())) {
-     dataFormatada = new Date(prod.vencimento).toLocaleDateString('pt-BR');
-      }
+    // Adiciona classes de alerta se necessário
+    const diasRestantes = calcularDiasRestantes(prod.vencimento);
+    if (diasRestantes >= 0 && diasRestantes < 10) {
+      tr.classList.add('alerta-vencimento');
+    }
+    if (prod.quantidade < 10) {
+      tr.classList.add('alerta-estoque');
     }
     
     tr.innerHTML = `
       <td>${prod.nome}</td>
       <td>${prod.quantidade ?? 0}</td>
-      <td>${dataFormatada}</td>
+      <td>${formatarDataExibicao(prod.vencimento)}</td>
       <td>
-      <button onclick="deletarProduto('${prod._id}')">DELETAR</button>
-      <button onclick="editarProdutoPrompt('${prod._id}')">EDITAR</button>
+        <button onclick="deletarProduto('${prod._id}')">DELETAR</button>
+        <button onclick="editarProdutoPrompt('${prod._id}')">EDITAR</button>
       </td>
     `;
     tabela.appendChild(tr);
   });
+  
+  // Atualizar a zona crítica sempre que a tabela principal for atualizada
+  atualizarZonaCritica(produtos);
 }
+
 
 async function carregarProdutos() {
   try {
@@ -88,46 +106,96 @@ async function carregarProdutos() {
 async function cadastrarProduto() {
   const nome = document.getElementById('produtoNome').value.trim();
   const quantidade = parseInt(document.getElementById('produtoQtd').value);
-  const vencimento = document.getElementById('produtoVencimento').value;
+  const vencimentoInput = document.getElementById('produtoVencimento').value;
 
-  if (!nome || isNaN(quantidade) || quantidade < 0 || !vencimento) {
-    alert('Preencha todos os campos corretamente! A data de vencimento é obrigatória.');
+  if (!nome || isNaN(quantidade) ){
+    alert('Preencha todos os campos corretamente!');
     return;
   }
 
   try {
-    const res = await fetch(apiURL);
-    const produtos = await res.json();
-    const nomeExiste = produtos.some(p => p.nome.toLowerCase() === nome.toLowerCase());
-
-    if (nomeExiste) {
-      alert('Já existe um produto com esse nome!');
-      return;
-    }
-
     const response = await fetch(apiURL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, quantidade, vencimento })
+      body: JSON.stringify({ 
+        nome, 
+        quantidade, 
+        vencimento: vencimentoInput || null 
+      })
     });
 
-    const novoProduto = await response.json();
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.erro || 'Erro ao cadastrar produto');
+    }
 
-    // Atualiza o cache local com o novo produto
+    const novoProduto = await response.json();
+    
+    // Atualiza o cache e a tabela
     const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos') || '[]');
     cachedProdutos.push(novoProduto);
     localStorage.setItem('cachedProdutos', JSON.stringify(cachedProdutos));
-
+    
+    // Limpa os campos
     document.getElementById('produtoNome').value = '';
     document.getElementById('produtoQtd').value = '';
     document.getElementById('produtoVencimento').value = '';
     
-    // Atualiza a tabela
     atualizarTabela(cachedProdutos);
   } catch (error) {
     console.error('Erro ao cadastrar produto:', error);
-    alert('Erro ao cadastrar produto.');
+    alert(error.message);
   }
+}
+
+
+async function editarProdutoPrompt(id) {
+  const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos')) || '[]';
+  const produto = cachedProdutos.find(p => p._id === id);
+  
+  if (!produto) {
+    alert('Produto não encontrado.');
+    return;
+  }
+
+  // Converter a data para o formato do input type="date" (AAAA-MM-DD)
+  let dataAtual = '';
+  if (produto.vencimento) {
+    const date = new Date(produto.vencimento);
+    if (!isNaN(date.getTime())) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      dataAtual = `${year}-${month}-${day}`;
+    }
+  }
+
+  const novoNome = prompt('Editar nome do produto:', produto.nome);
+  if (novoNome === null) return;
+
+  const novaQtd = parseInt(prompt('Editar quantidade:', produto.quantidade));
+  if (isNaN(novaQtd)) {
+    alert('Quantidade deve ser um número válido.');
+    return;
+  }
+
+  const novoVenc = prompt('Editar data de validade (AAAA-MM-DD):', dataAtual);
+  if (novoVenc === null) return;
+
+  // Validar a data se foi informada
+  if (novoVenc) {
+    const date = new Date(novoVenc);
+    if (isNaN(date.getTime())) {
+      alert('Data inválida! Use o formato AAAA-MM-DD.');
+      return;
+    }
+  }
+
+  await atualizarProduto(id, {
+    nome: novoNome,
+    quantidade: novaQtd,
+    vencimento: novoVenc || null
+  });
 }
 
 async function deletarProduto(id) {
@@ -150,54 +218,6 @@ async function deletarProduto(id) {
     console.error('Erro ao deletar produto:', error);
     alert('Erro ao deletar produto.');
   }
-}
-
-async function editarProdutoPrompt(id) {
-  const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos') || '[]');
-  const produto = cachedProdutos.find(p => p._id === id);
-  if (!produto) {
-    alert('Produto não encontrado.');
-    return;
-  }
-
-  // Formata a data atual para exibição no prompt (DD/MM/AAAA)
-  const dataAtual = produto.vencimento ? 
-    new Date(produto.vencimento).toLocaleDateString('pt-BR') : '';
-
-  const novoNome = prompt('Editar nome do produto:', produto.nome);
-  if (novoNome === null) return;
-
-  const novaQtdStr = prompt('Editar quantidade:', produto.quantidade);
-  if (novaQtdStr === null) return;
-  
-  const novaQtd = parseInt(novaQtdStr);
-  if (isNaN(novaQtd)) {
-    alert('Quantidade deve ser um número válido.');
-    return;
-  }
-
-  const novoVenc = prompt('Editar data de validade (DD/MM/AAAA):', dataAtual);
-  if (novoVenc === null) return;
-
-  // Converte a data de DD/MM/AAAA para AAAA-MM-DD (formato ISO)
-  let vencimentoISO = null;
-  if (novoVenc) {
-    const [day, month, year] = novoVenc.split('/');
-    vencimentoISO = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    
-    // Valida a data
-    const dateObj = new Date(vencimentoISO);
-    if (isNaN(dateObj.getTime())) {
-      alert('Data inválida! Use o formato DD/MM/AAAA.');
-      return;
-    }
-  }
-
-  await atualizarProduto(id, { 
-    nome: novoNome, 
-    quantidade: novaQtd, 
-    vencimento: vencimentoISO 
-  });
 }
 
 async function atualizarProduto(id, dadosAtualizados) {
@@ -438,4 +458,83 @@ async function importarProdutos() {
     alert('Erro ao importar produtos.');
     console.error(error);
   }
+}
+
+// Função para calcular dias restantes até o vencimento
+function calcularDiasRestantes(dataVencimento) {
+  if (!dataVencimento) return Infinity; // Retorna infinito se não houver data
+  
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  
+  const vencimento = new Date(dataVencimento);
+  vencimento.setHours(0, 0, 0, 0);
+  
+  const diffTime = vencimento - hoje;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+}
+
+// Função para atualizar a zona crítica
+function atualizarZonaCritica(produtos) {
+  const hoje = new Date();
+  
+  // Filtrar produtos que estão próximos do vencimento (menos de 10 dias)
+  const produtosVencendo = produtos.filter(produto => {
+    if (!produto.vencimento) return false;
+    const diasRestantes = calcularDiasRestantes(produto.vencimento);
+    return diasRestantes >= 0 && diasRestantes < 10;
+  });
+  
+  // Filtrar produtos com estoque baixo (menos de 10 unidades)
+  const produtosAcabando = produtos.filter(produto => {
+    return produto.quantidade < 10 && produto.quantidade > 0;
+  });
+  
+  // Atualizar a tabela de produtos vencendo
+  const tabelaVencendo = document.getElementById('tabelaVencendo').getElementsByTagName('tbody')[0];
+  tabelaVencendo.innerHTML = '';
+  
+  produtosVencendo.forEach(produto => {
+    const diasRestantes = calcularDiasRestantes(produto.vencimento);
+    const tr = document.createElement('tr');
+    
+    // Adiciona classe de alerta se faltar menos de 3 dias
+    if (diasRestantes < 3) {
+      tr.classList.add('alerta-urgente');
+    } else if (diasRestantes < 7) {
+      tr.classList.add('alerta-proximo');
+    }
+    
+    tr.innerHTML = `
+      <td>${produto.nome}</td>
+      <td>${produto.quantidade}</td>
+      <td>${formatarDataExibicao(produto.vencimento)}</td>
+      <td>${diasRestantes} dias</td>
+    `;
+    tabelaVencendo.appendChild(tr);
+  });
+  
+  // Atualizar a tabela de produtos acabando
+  const tabelaAcabando = document.getElementById('tabelaAcabando').getElementsByTagName('tbody')[0];
+  tabelaAcabando.innerHTML = '';
+  
+  produtosAcabando.forEach(produto => {
+    const tr = document.createElement('tr');
+    
+    // Adiciona classe de alerta se tiver menos de 3 unidades
+    if (produto.quantidade < 3) {
+      tr.classList.add('alerta-urgente');
+    } else if (produto.quantidade < 5) {
+      tr.classList.add('alerta-proximo');
+    }
+    
+    tr.innerHTML = `
+      <td>${produto.nome}</td>
+      <td>${produto.quantidade}</td>
+      <td>${formatarDataExibicao(produto.vencimento)}</td>
+    `;
+    tabelaAcabando.appendChild(tr);
+  });
 }

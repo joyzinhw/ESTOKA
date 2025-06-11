@@ -230,5 +230,33 @@ res.status(500).json({ erro: err.message });
   }
 });
 
+// Rota para produtos próximos do vencimento
+app.get('/produtos/vencendo', async (req, res) => {
+  const hoje = new Date();
+  const dezDias = new Date(hoje);
+  dezDias.setDate(hoje.getDate() + 10);
+  
+  const produtos = await Produto.find({
+    vencimento: {
+      $gte: hoje,
+      $lte: dezDias
+    }
+  });
+  
+  res.json(produtos);
+});
+
+// Rota para produtos com estoque baixo
+app.get('/produtos/estoque-baixo', async (req, res) => {
+  const produtos = await Produto.find({
+    quantidade: {
+      $lt: 10,
+      $gt: 0
+    }
+  });
+  
+  res.json(produtos);
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
