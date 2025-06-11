@@ -1,8 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
-
 const multer = require('multer');
 const XLSX = require('xlsx');
 const fs = require('fs');
