@@ -73,6 +73,7 @@ app.delete('/produtos/:id', async (req, res) => {
 });
 
 // Movimentar produto (entrada ou saída de estoque)
+// Movimentar produto (entrada ou saída de estoque)
 app.put('/produtos/:id/movimentar', async (req, res) => {
   const { tipo, quantidade } = req.body;
   const produto = await Produto.findById(req.params.id);
@@ -100,7 +101,7 @@ app.put('/produtos/:id/movimentar', async (req, res) => {
   res.json(produto);
 });
 
-// Ver histórico de movimentações
+// Ver histórico de movimentações (ordenado do mais recente para o mais antigo)
 app.get('/produtos/:id/historico', async (req, res) => {
   const produto = await Produto.findById(req.params.id);
   if (!produto) return res.status(404).json({ message: 'Produto não encontrado.' });
