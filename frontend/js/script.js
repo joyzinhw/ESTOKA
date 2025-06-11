@@ -49,10 +49,7 @@ function atualizarTabela(produtos) {
     if (prod.vencimento) {
       const date = new Date(prod.vencimento);
       if (!isNaN(date.getTime())) {
-        // Ajusta para o timezone local antes de formatar
-        const offset = date.getTimezoneOffset() * 60000; // offset em milissegundos
-        const localDate = new Date(date.getTime() - offset);
-        dataFormatada = localDate.toISOString().split('T')[0].split('-').reverse().join('/');
+     dataFormatada = new Date(prod.vencimento).toLocaleDateString('pt-BR');
       }
     }
     
@@ -238,7 +235,7 @@ async function movimentarProduto(id, tipo, quantidade) {
   if (!['entrada', 'saida'].includes(tipo) || isNaN(quantidade) || quantidade <= 0) {
     alert('Tipo ou quantidade inválida para movimentação!');
     return;
-  }     console.error('Erro ao atualizar produto:', error);
+  }
 
   try {
     const response = await fetch(`${apiURL}/${id}/movimentar`, {
@@ -246,6 +243,10 @@ async function movimentarProduto(id, tipo, quantidade) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tipo, quantidade })
     });
+    
+    if (!response.ok) {
+      throw new Error('Erro na resposta do servidor');
+    }
     
     const produtoAtualizado = await response.json();
     
@@ -260,9 +261,11 @@ async function movimentarProduto(id, tipo, quantidade) {
     // Atualiza a tabela
     atualizarTabela(cachedProdutos);
     alert('Movimentação realizada com sucesso!');
+    return true;
   } catch (error) {
     console.error('Erro ao movimentar produto:', error);
-    alert('Erro ao movimentar produto.');
+    alert(`Erro ao movimentar produto: ${error.message}`);
+    return false;
   }
 }
 
@@ -282,21 +285,43 @@ async function executarMovimento(tipo) {
   const nome = document.getElementById('nomeProdutoMovimento').value.trim();
   const qtd = parseInt(document.getElementById('qtdMovimento').value);
 
-  if (!nome || isNaN(qtd) || qtd <= 0) {
-    alert('Informe o nome do produto e uma quantidade válida.');
+  if (!nome) {
+    alert('Informe o nome do produto.');
     return;
   }
 
-  const produto = await buscarProdutoPorNome(nome);
-  if (!produto) {
-    alert('Produto não encontrado.');
+  if (isNaN(qtd) || qtd <= 0) {
+    alert('Informe uma quantidade válida (maior que zero).');
     return;
   }
 
-  movimentarProduto(produto._id, tipo, qtd);
+  try {
+    // Busca o produto no cache local primeiro
+    const cachedProdutos = JSON.parse(localStorage.getItem('cachedProdutos') || '[]');
+    let produto = cachedProdutos.find(p => p.nome.toLowerCase() === nome.toLowerCase());
 
-  document.getElementById('nomeProdutoMovimento').value = '';
-  document.getElementById('qtdMovimento').value = '';
+    // Se não encontrou no cache, busca no servidor
+    if (!produto) {
+      const response = await fetch(`${apiURL}/buscar?nome=${encodeURIComponent(nome)}`);
+      if (response.ok) {
+        produto = await response.json();
+      } else {
+        throw new Error('Produto não encontrado');
+      }
+    }
+
+    // Executa a movimentação
+    const sucesso = await movimentarProduto(produto._id, tipo, qtd);
+    
+    if (sucesso) {
+      // Limpa os campos após sucesso
+      document.getElementById('nomeProdutoMovimento').value = '';
+      document.getElementById('qtdMovimento').value = '';
+    }
+  } catch (error) {
+    console.error('Erro no movimento:', error);
+    alert(`Erro: ${error.message}`);
+  }
 }
 
 async function verHistorico(id) {

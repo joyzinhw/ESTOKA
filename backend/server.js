@@ -16,9 +16,9 @@ const upload = multer({ dest: 'uploads/' });
 
 const app = express();
 
-app.use(cors({
-  origin: 'https://estokkaa.netlify.app'
-}));
+const cors = require('cors');
+app.use(cors({ origin: 'https://estokkaa.netlify.app' }));
+
 
 app.use(express.json());
 
