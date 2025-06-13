@@ -71,7 +71,9 @@ function atualizarTabela(produtos) {
     'TB': 'Tubo',
     'MG': 'Miligrama',
     'ML': 'Mililitro',
-    'G': 'Grama'
+    'G': 'Grama'  ,
+    'PARES': 'Pares',
+    'LT': 'Litro',
   };
 
   produtos.forEach(prod => {
@@ -497,9 +499,11 @@ function atualizarZonaCritica(produtos) {
   const tabelaVencendo = document.getElementById('tabelaVencendo').getElementsByTagName('tbody')[0];
   tabelaVencendo.innerHTML = '';
   
-  produtosVencendo.forEach(produto => {
+    produtosVencendo.forEach(produto => {
     const diasRestantes = calcularDiasRestantes(produto.vencimento);
+    const tipoExibicao = tipos[produto.tipo] || produto.tipo || '—';
     const tr = document.createElement('tr');
+    
     
     if (diasRestantes < 3) {
       tr.classList.add('alerta-urgente');
@@ -510,6 +514,7 @@ function atualizarZonaCritica(produtos) {
     tr.innerHTML = `
       <td>${produto.nome}</td>
       <td>${produto.quantidade}</td>
+      <td>${tipoExibicao}</td>
       <td>${formatarDataExibicao(produto.vencimento)}</td>
       <td>${diasRestantes} dias</td>
     `;
@@ -537,11 +542,13 @@ function atualizarZonaCritica(produtos) {
     return prod.quantidade <= limite;
   });
 
-  produtosCriticos.forEach(prod => {
+produtosCriticos.forEach(prod => {
+    const tipoExibicao = tipos[prod.tipo] || prod.tipo || '—';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${prod.nome}</td>
       <td>${prod.quantidade}</td>
+      <td>${tipoExibicao}</td>
       <td>${formatarDataExibicao(prod.vencimento)}</td>
   
     `;
