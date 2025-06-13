@@ -53,7 +53,7 @@ app.post('/produtos', async (req, res, next) => {
     }
 
     // Validação do tipo
-    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G'];
+    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G', 'PARES', 'LT'];
     const tipoFinal = tiposValidos.includes(tipo) ? tipo : 'UN';
 
     const produtoExiste = await Produto.findOne({ nome: new RegExp(`^${nome}$`, 'i') });
@@ -177,7 +177,7 @@ app.put('/produtos/:id', async (req, res, next) => {
     }
 
     // Validação do tipo
-    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G'];
+    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G', 'PARES', 'LT'];
     const tipoFinal = tiposValidos.includes(tipo) ? tipo : 'UN';
 
     const produtoExiste = await Produto.findOne({ 
@@ -252,7 +252,7 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res, next) 
     const sheetName = workbook.SheetNames[0];
     const dados = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G'];
+    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G', 'PARES', 'LT'];
     const resultados = [];
     
     for (const item of dados) {

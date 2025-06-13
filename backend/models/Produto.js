@@ -12,7 +12,7 @@ const produtoSchema = new mongoose.Schema({
   vencimento: { type: Date },
   tipo: { 
     type: String, 
-    enum: ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G'],
+    enum: ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G', 'TL', 'PARES', ],
     default: 'UN'
   },
   historico: [historicoSchema] 

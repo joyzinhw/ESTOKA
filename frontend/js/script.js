@@ -526,7 +526,9 @@ function atualizarZonaCritica(produtos) {
     'CX': 5,
     'FR': 10,
     'TB': 5,
-    'BL': 5
+    'BL': 5,
+    "LT":  5,
+    "PARES": 5
     // Você pode incluir mais se quiser
   };
 
@@ -541,10 +543,11 @@ function atualizarZonaCritica(produtos) {
       <td>${prod.nome}</td>
       <td>${prod.quantidade}</td>
       <td>${formatarDataExibicao(prod.vencimento)}</td>
+  
     `;
     tabela.appendChild(tr);
   });
 
-  const secao = document.getElementById('secaoAcabando');
-  secao.classList.toggle('secao-oculta', produtosCriticos.length === 0);
+  // const secao = document.getElementById('secaoAcabando');
+  // secao.classList.toggle('secao-oculta', produtosCriticos.length === 0);
 }

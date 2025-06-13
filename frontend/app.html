@@ -58,9 +58,9 @@
         <option value="FR">Frasco</option>
         <option value="BL">Blister</option>
         <option value="TB">Tubo</option>
-        <option value="MG">Miligrama</option>
-        <option value="ML">Mililitro</option>
-        <option value="G">Grama</option>
+        <option value="LT">Litro</option>
+        <option value="PARES">Pares</option>
+
       </select>
         <input type="date" id="produtoVencimento" placeholder="Data de vencimento">
         <button onclick="cadastrarProduto()">CADASTRAR</button>
@@ -122,7 +122,7 @@
 
       <!-- Seções da Zona Crítica -->
 <section id="secaoVencendo" class="secao-oculta">
-  <h2>Produtos próximos do vencimento (menos de 10 dias)</h2>
+  <h2>Produtos próximos do vencimento</h2>
   <table id="tabelaVencendo">
     <thead>
       <tr>
@@ -137,7 +137,7 @@
 </section>
 
 <section id="secaoAcabando" class="secao-oculta">
-  <h2>Produtos com estoque baixo (menos de 10 unidades)</h2>
+  <h2>Produtos com estoque baixo</h2>
   <table id="tabelaAcabando">
     <thead>
       <tr>
