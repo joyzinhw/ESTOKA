@@ -44,6 +44,7 @@ app.get('/produtos', async (req, res, next) => {
 });
 
 // Cadastrar produto
+// Cadastrar produto
 app.post('/produtos', async (req, res, next) => {
   try {
     const { nome, quantidade, vencimento, tipo } = req.body;
@@ -63,8 +64,32 @@ app.post('/produtos', async (req, res, next) => {
 
     let vencimentoDate = null;
     if (vencimento) {
-      const parsed = new Date(vencimento);
-      if (!isNaN(parsed)) vencimentoDate = parsed;
+      // Verifica se a data está no formato esperado (AAAA-MM-DD)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(vencimento)) {
+        return res.status(400).json({ error: 'Formato de data inválido. Use AAAA-MM-DD.' });
+      }
+
+      // Separa os componentes da data
+      const [year, month, day] = vencimento.split('-');
+      
+      // Cria a data em UTC para evitar problemas de fuso horário
+      vencimentoDate = new Date(Date.UTC(year, month - 1, day));
+      
+      // Verifica se a data é válida
+      if (isNaN(vencimentoDate.getTime())) {
+        return res.status(400).json({ error: 'Data de vencimento inválida.' });
+      }
+
+      // Verifica se a data não é no passado
+      const hojeUTC = new Date(Date.UTC(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        new Date().getDate()
+      ));
+      
+      if (vencimentoDate < hojeUTC) {
+        return res.status(400).json({ error: 'Data de vencimento não pode ser no passado.' });
+      }
     }
 
     const produto = new Produto({
@@ -75,7 +100,14 @@ app.post('/produtos', async (req, res, next) => {
     });
 
     await produto.save();
-    res.status(201).json(produto);
+    
+    // Para a resposta, formatamos a data no formato ISO sem o timezone
+    const produtoResposta = produto.toObject();
+    if (produtoResposta.vencimento) {
+      produtoResposta.vencimento = produtoResposta.vencimento.toISOString().split('T')[0];
+    }
+    
+    res.status(201).json(produtoResposta);
   } catch (err) {
     next(err);
   }
@@ -168,6 +200,7 @@ app.get('/produtos/:id/historico', async (req, res, next) => {
 });
 
 // Editar produto
+// Editar produto
 app.put('/produtos/:id', async (req, res, next) => {
   try {
     const { nome, quantidade, vencimento, tipo } = req.body;
@@ -191,9 +224,31 @@ app.put('/produtos/:id', async (req, res, next) => {
 
     let vencimentoDate = null;
     if (vencimento) {
-      vencimentoDate = new Date(vencimento);
+      // Verifica se a data está no formato esperado (AAAA-MM-DD)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(vencimento)) {
+        return res.status(400).json({ error: 'Formato de data inválido. Use AAAA-MM-DD.' });
+      }
+
+      // Separa os componentes da data
+      const [year, month, day] = vencimento.split('-');
+      
+      // Cria a data em UTC para evitar problemas de fuso horário
+      vencimentoDate = new Date(Date.UTC(year, month - 1, day));
+      
+      // Verifica se a data é válida
       if (isNaN(vencimentoDate.getTime())) {
         return res.status(400).json({ error: 'Data de vencimento inválida.' });
+      }
+
+      // Verifica se a data não é no passado
+      const hojeUTC = new Date(Date.UTC(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        new Date().getDate()
+      ));
+      
+      if (vencimentoDate < hojeUTC) {
+        return res.status(400).json({ error: 'Data de vencimento não pode ser no passado.' });
       }
     }
 
@@ -207,7 +262,13 @@ app.put('/produtos/:id', async (req, res, next) => {
       return res.status(404).json({ error: 'Produto não encontrado.' });
     }
 
-    res.json(produto);
+    // Para a resposta, formatamos a data no formato ISO sem o timezone
+    const produtoResposta = produto.toObject();
+    if (produtoResposta.vencimento) {
+      produtoResposta.vencimento = produtoResposta.vencimento.toISOString().split('T')[0];
+    }
+    
+    res.json(produtoResposta);
   } catch (err) {
     next(err);
   }
@@ -313,6 +374,8 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res, next) 
 app.get('/produtos/vencendo', async (req, res, next) => {
   try {
     const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0); // Considera apenas a data, sem hora
+    
     const dezDias = new Date(hoje);
     dezDias.setDate(hoje.getDate() + 10);
     
@@ -366,10 +429,15 @@ app.get('/produtos/buscar', async (req, res, next) => {
 
 // Função auxiliar para formatar data no formato dd/mm/yyyy
 function formatarDataParaExcel(date) {
+  if (!date) return '';
+  
+  // Ajusta para o fuso horário local antes de formatar
   const d = new Date(date);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
+  const adjustedDate = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
+  
+  const day = String(adjustedDate.getDate()).padStart(2, '0');
+  const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
+  const year = adjustedDate.getFullYear();
   return `${day}/${month}/${year}`;
 }
 
