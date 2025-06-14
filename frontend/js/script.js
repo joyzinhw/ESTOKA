@@ -1,5 +1,20 @@
 const apiURL = 'https://estoka.onrender.com/produtos';
 
+// Mapeamento global de tipos
+const tipos = {
+  'UN': 'Unidade',
+  'CX': 'Caixa',
+  'FR': 'Frasco',
+  'BL': 'Blister',
+  'TB': 'Tubo',
+  'MG': 'Miligrama',
+  'ML': 'Mililitro',
+  'G': 'Grama',
+  'PARES': 'Pares',
+  'LT': 'Litro',
+};
+
+
 // Elementos do formulário
 const signUpButton = document.getElementById('signUpButton');
 const signInButton = document.getElementById('signInButton');
@@ -62,19 +77,6 @@ function atualizarTabela(produtos) {
 
   tabela.innerHTML = '';
 
-  // Mapear códigos de tipo para nomes amigáveis
-  const tipos = {
-    'UN': 'Unidade',
-    'CX': 'Caixa',
-    'FR': 'Frasco',
-    'BL': 'Blister',
-    'TB': 'Tubo',
-    'MG': 'Miligrama',
-    'ML': 'Mililitro',
-    'G': 'Grama'  ,
-    'PARES': 'Pares',
-    'LT': 'Litro',
-  };
 
   produtos.forEach(prod => {
     const tr = document.createElement('tr');
