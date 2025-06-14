@@ -1,6 +1,5 @@
 const apiURL = 'https://estoka.onrender.com/produtos';
 
-// Mapeamento global de tipos
 const tipos = {
   'UN': 'Unidade',
   'CX': 'Caixa',
@@ -13,7 +12,6 @@ const tipos = {
   'PARES': 'Pares',
   'LT': 'Litro',
 };
-
 
 // Elementos do formulário
 const signUpButton = document.getElementById('signUpButton');
@@ -64,7 +62,11 @@ function formatarDataExibicao(dataString) {
   try {
     const date = new Date(dataString);
     if (isNaN(date.getTime())) return 'Data inválida';
-    return date.toLocaleDateString('pt-BR');
+    
+    // Ajusta para compensar o fuso horário
+    const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+    
+    return adjustedDate.toLocaleDateString('pt-BR');
   } catch (error) {
     console.error('Erro ao formatar data:', error);
     return 'Data inválida';
@@ -76,7 +78,6 @@ function atualizarTabela(produtos) {
   if (!tabela) return;
 
   tabela.innerHTML = '';
-
 
   produtos.forEach(prod => {
     const tr = document.createElement('tr');
@@ -196,7 +197,7 @@ async function editarProdutoPrompt(id) {
     return;
   }
 
-  const novoTipo = prompt('Editar tipo do produto (UN, CX, FR, BL, TB, MG, ML, G):', produto.tipo || 'UN');
+  const novoTipo = prompt('Editar tipo do produto (UN, CX, FR, BL, TB, MG, ML, G, LT):', produto.tipo || 'UN');
   if (novoTipo === null) return;
 
   const novoVenc = prompt('Editar data de validade (AAAA-MM-DD):', dataAtual);
