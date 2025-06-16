@@ -49,6 +49,8 @@ app.post('/produtos', async (req, res, next) => {
     console.log('Dados recebidos:', req.body); // Adicione este log
     const { nome, quantidade, vencimento, tipo } = req.body;
 
+    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G', 'PARES', 'LT'];
+    
     console.log('Tipo recebido:', tipo); // Log do tipo recebido
     console.log('É válido?', tiposValidos.includes(tipo)); // Verifique se está sendo validado corretamente
 
@@ -57,7 +59,7 @@ app.post('/produtos', async (req, res, next) => {
     }
 
     // Validação do tipo
-    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G', 'PARES', 'LT'];
+    
     const tipoFinal = tiposValidos.includes(tipo) ? tipo : 'UN';
 
     const produtoExiste = await Produto.findOne({ nome: new RegExp(`^${nome}$`, 'i') });
