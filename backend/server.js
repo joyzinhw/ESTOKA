@@ -8,7 +8,6 @@ const path = require('path');
 const cors = require('cors');
 const admin = require('firebase-admin');
 
-// Modelo do Produto
 const Produto = require('./models/Produto');
 
 // Configurações iniciais
