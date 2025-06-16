@@ -259,7 +259,6 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res, next) 
     const dados = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
     const tiposValidos = ['UN', 'CX', 'LT', 'PARES'];
-    const tipoFinal = tiposValidos.includes(tipo) ? tipo : 'UN';
     const resultados = [];
     
     for (const item of dados) {
