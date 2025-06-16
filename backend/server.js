@@ -46,7 +46,11 @@ app.get('/produtos', async (req, res, next) => {
 // Cadastrar produto
 app.post('/produtos', async (req, res, next) => {
   try {
+    console.log('Dados recebidos:', req.body); // Adicione este log
     const { nome, quantidade, vencimento, tipo } = req.body;
+
+    console.log('Tipo recebido:', tipo); // Log do tipo recebido
+    console.log('É válido?', tiposValidos.includes(tipo)); // Verifique se está sendo validado corretamente
 
     if (!nome || nome.trim() === '') {
       return res.status(400).json({ error: 'Nome do produto é obrigatório.' });
@@ -253,7 +257,7 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res, next) 
     const dados = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
     const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G', 'PARES', 'LT'];
-    const tipoFinal = tiposValidos.includes(tipo?.toUpperCase()) ? tipo.toUpperCase() : 'UN';
+    const tipoFinal = tiposValidos.includes(tipo) ? tipo : 'UN';
     const resultados = [];
     
     for (const item of dados) {
