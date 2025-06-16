@@ -6,8 +6,8 @@ const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
-const admin = require('firebase-admin');
 
+// Modelo do Produto
 const Produto = require('./models/Produto');
 
 // Configurações iniciais
@@ -25,37 +25,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 }).then(() => console.log('MongoDB conectado!'))
   .catch(err => console.error('Erro na conexão com MongoDB:', err));
 
-
-
-// Configuração do Firebase Admin
-admin.initializeApp({
-  credential: admin.credential.cert(require('./service-account.json')),
-  databaseURL: "https://login-cc86f.firebaseio.com"
-});
-
-// Middleware de autenticação
-const authenticate = async (req, res, next) => {
-  try {
-    // Verifica o cabeçalho de autorização
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Não autorizado' });
-    }
-
-    const idToken = authHeader.split('Bearer ')[1];
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    
-    // Adiciona informações do usuário à requisição
-    req.user = decodedToken;
-    next();
-  } catch (error) {
-    console.error('Erro na autenticação:', error);
-    res.status(403).json({ error: 'Acesso não autorizado' });
-  }
-};
-
-// Aplica a todas as rotas de produtos
-app.use('/produtos', authenticate);
 // Middleware de log para debug 
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
