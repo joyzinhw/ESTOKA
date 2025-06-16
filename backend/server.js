@@ -49,8 +49,8 @@ app.post('/produtos', async (req, res, next) => {
     console.log('Dados recebidos:', req.body); // Adicione este log
     const { nome, quantidade, vencimento, tipo } = req.body;
 
-    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G', 'PARES', 'LT'];
-    
+    const tiposValidos = ['UN', 'CX', 'LT', 'PARES'];
+
     console.log('Tipo recebido:', tipo); // Log do tipo recebido
     console.log('É válido?', tiposValidos.includes(tipo)); // Verifique se está sendo validado corretamente
 
@@ -183,7 +183,7 @@ app.put('/produtos/:id', async (req, res, next) => {
     }
 
     // Validação do tipo
-    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G', 'PARES', 'LT'];
+    const tiposValidos = ['UN', 'CX', 'LT', 'PARES'];
     const tipoFinal = tiposValidos.includes(tipo) ? tipo : 'UN';
 
     const produtoExiste = await Produto.findOne({ 
@@ -258,7 +258,7 @@ app.post('/produtos/importar', upload.single('arquivo'), async (req, res, next) 
     const sheetName = workbook.SheetNames[0];
     const dados = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    const tiposValidos = ['UN', 'CX', 'FR', 'BL', 'TB', 'MG', 'ML', 'G', 'PARES', 'LT'];
+    const tiposValidos = ['UN', 'CX', 'LT', 'PARES'];
     const tipoFinal = tiposValidos.includes(tipo) ? tipo : 'UN';
     const resultados = [];
     
